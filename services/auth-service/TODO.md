@@ -84,26 +84,26 @@ Objetivo: preparar base minima do servico para iniciar desenvolvimento.
 Objetivo: modelar regras de autenticacao sem acoplamento com infraestrutura.
 
 ### Entidades
-- [ ] Credential
-- [ ] RefreshSession
-- [ ] AuthTokens
+- [x] Credential
+- [x] RefreshSession
+- [x] AuthTokens
 
 ### Value Objects e regras
-- [ ] Email valido
-- [ ] PasswordPolicy (minimo de seguranca)
-- [ ] TokenTTL
+- [x] Email valido
+- [x] PasswordPolicy (minimo de seguranca)
+- [x] TokenTTL
 
 ### Interfaces
-- [ ] CredentialRepository
-- [ ] RefreshTokenRepository
-- [ ] PasswordHasher
-- [ ] TokenService
-- [ ] Clock (para testabilidade)
-- [ ] IDGenerator
+- [x] CredentialRepository
+- [x] RefreshTokenRepository
+- [x] PasswordHasher
+- [x] TokenService
+- [x] Clock (para testabilidade)
+- [x] IDGenerator
 
 ### Criterio de pronto
-- [ ] Compila sem infraestrutura real
-- [ ] Regras de dominio cobertas por testes unitarios
+- [x] Compila sem infraestrutura real
+- [x] Regras de dominio cobertas por testes unitarios
 
 ---
 
