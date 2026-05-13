@@ -111,35 +111,35 @@ Objetivo: modelar regras de autenticacao sem acoplamento com infraestrutura.
 Objetivo: implementar casos de uso com fluxo de negocio do auth.
 
 ### Casos de uso
-- [ ] RegisterUser
-- [ ] LoginUser
-- [ ] RefreshAccessToken
-- [ ] LogoutSession
-- [ ] ValidateAccessToken (uso interno)
+- [x] RegisterUser
+- [x] LoginUser
+- [x] RefreshAccessToken
+- [x] LogoutSession
+- [x] ValidateAccessToken (uso interno)
 
 ### Regras por caso de uso
 - RegisterUser
-  - [ ] Validar payload e senha
-  - [ ] Garantir email unico
-  - [ ] Hash de senha
-  - [ ] Persistir credencial
+  - [x] Validar payload e senha
+  - [x] Garantir email unico
+  - [x] Hash de senha
+  - [x] Persistir credencial
   - [ ] Criar refresh session inicial (opcional no register)
 - LoginUser
-  - [ ] Buscar credencial por email
-  - [ ] Comparar hash
-  - [ ] Gerar access token + refresh token
-  - [ ] Persistir hash do refresh token
+  - [x] Buscar credencial por email
+  - [x] Comparar hash
+  - [x] Gerar access token + refresh token
+  - [x] Persistir hash do refresh token
 - RefreshAccessToken
-  - [ ] Validar refresh token
-  - [ ] Verificar revogacao e expiracao
-  - [ ] Rotacionar refresh token
-  - [ ] Invalidar token anterior
+  - [x] Validar refresh token
+  - [x] Verificar revogacao e expiracao
+  - [x] Rotacionar refresh token
+  - [x] Invalidar token anterior
 - LogoutSession
-  - [ ] Revogar refresh token ativo
+  - [x] Revogar refresh token ativo
 
 ### Criterio de pronto
-- [ ] Todos os casos de uso com testes unitarios
-- [ ] Erros de dominio mapeados para erros padrao
+- [x] Todos os casos de uso com testes unitarios
+- [x] Erros de dominio mapeados para erros padrao
 
 ---
 

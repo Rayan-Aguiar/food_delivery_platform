@@ -58,11 +58,17 @@ type tokenServiceStub struct{}
 func (tokenServiceStub) GenerateAccessToken(ctx context.Context, claims valueobjects.TokenClaims) (string, error) {
 	return "", nil
 }
+
 func (tokenServiceStub) ValidateAccessToken(ctx context.Context, token string) (valueobjects.TokenClaims, error) {
 	return valueobjects.TokenClaims{}, nil
 }
+
 func (tokenServiceStub) GenerateRefreshToken(ctx context.Context) (string, string, error) {
 	return "", "", nil
+}
+
+func (tokenServiceStub) HashRefreshToken(ctx context.Context, plain string) (string, error) {
+	return "", nil
 }
 
 type clockStub struct{}

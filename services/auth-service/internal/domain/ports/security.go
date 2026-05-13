@@ -16,4 +16,5 @@ type TokenService interface {
 	ValidateAccessToken(ctx context.Context, token string) (valueobjects.TokenClaims, error)
 
 	GenerateRefreshToken(ctx context.Context) (plain string, tokenHash string, err error)
+	HashRefreshToken(ctx context.Context, plain string) (string, error)
 }
