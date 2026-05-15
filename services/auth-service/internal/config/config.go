@@ -17,6 +17,10 @@ type Config struct {
 	MongoDBName    string
 	RabbitMQURL    string
 	BcryptCost     int
+	JWTSecret      string
+	JWTIssuer      string
+	JWTAccessTTL   time.Duration
+	JWTRefreshTTL  time.Duration
 }
 
 func Load() Config {
@@ -24,17 +28,36 @@ func Load() Config {
 	_ = godotenv.Load(".env")
 
 	cfg := Config{
-		ServiceName: getEnv("SERVICE_NAME", "auth-service"),
-		HTTPPort:    getEnv("HTTP_PORT", "8081"),
-		LogLevel:    getEnv("LOG_LEVEL", "info"),
-		MongoURI:    getEnv("MONGO_URI", ""),
-		MongoDBName: getEnv("MONGO_DB_NAME", "auth_db"),
-		RabbitMQURL: getEnv("RABBITMQ_URL", ""),
-		BcryptCost:  getEnvInt("BCRYPT_COST", 12),
+		ServiceName:   getEnv("SERVICE_NAME", "auth-service"),
+		HTTPPort:      getEnv("HTTP_PORT", "8081"),
+		LogLevel:      getEnv("LOG_LEVEL", "info"),
+		MongoURI:      getEnv("MONGO_URI", ""),
+		MongoDBName:   getEnv("MONGO_DB_NAME", "auth_db"),
+		RabbitMQURL:   getEnv("RABBITMQ_URL", ""),
+		BcryptCost:    getEnvInt("BCRYPT_COST", 12),
+		JWTSecret:     getEnv("JWT_SECRET", ""),
+		JWTIssuer:     getEnv("JWT_ISSUER", "auth-service"),
+		JWTAccessTTL:  time.Duration(getEnvInt("JWT_ACCESS_TTL", 15)) * time.Minute,
+		JWTRefreshTTL: time.Duration(getEnvInt("JWT_REFRESH_TTL", 60)) * time.Minute,
 	}
 	// Faixa valida do bcrypt: 4..31. Em valor invalido, usa fallback seguro.
 	if cfg.BcryptCost < 4 || cfg.BcryptCost > 31 {
 		cfg.BcryptCost = 12
+	}
+
+	if cfg.ServiceName != "" && os.Getenv("JWT_ISSUER") == "" {
+		cfg.JWTIssuer = cfg.ServiceName
+	}
+
+	if cfg.BcryptCost < 4 || cfg.BcryptCost > 31 {
+		cfg.BcryptCost = 12
+	}
+
+	if cfg.JWTAccessTTL <= 0 {
+		cfg.JWTAccessTTL = 15 * time.Minute
+	}
+	if cfg.JWTRefreshTTL <= cfg.JWTAccessTTL {
+		cfg.JWTRefreshTTL = 7 * 24 * time.Hour
 	}
 
 	timeoutSeconds := getEnvInt("REQUEST_TIMEOUT_SECONDS", 10)
@@ -61,4 +84,16 @@ func getEnvInt(key string, fallback int) int {
 		return fallback
 	}
 	return n
+}
+
+func getEnvDuration(key string, fallback time.Duration) time.Duration {
+	v := os.Getenv(key)
+	if v == "" {
+		return fallback
+	}
+	d, err := time.ParseDuration(v)
+	if err != nil {
+		return fallback
+	}
+	return d
 }

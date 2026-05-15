@@ -152,19 +152,19 @@ Objetivo: implementar provedores tecnicos de criptografia e token.
 - [x] Cobrir erro de hash/compare
 
 ### JWT
-- [ ] Gerar access token com claims minimas: sub, iat, exp
-- [ ] Assinatura HMAC (fase atual)
-- [ ] Validacao de assinatura e expiracao
-- [ ] Preparar suporte futuro para RSA/JWKS
+- [x] Gerar access token com claims minimas: sub, iat, exp
+- [x] Assinatura HMAC (fase atual)
+- [x] Validacao de assinatura e expiracao
+- [x] Preparar suporte futuro para RSA/JWKS
 
 ### Refresh token
-- [ ] Gerar token aleatorio seguro
-- [ ] Persistir somente hash do refresh token
-- [ ] Definir TTL configuravel
+- [x] Gerar token aleatorio seguro
+- [x] Persistir somente hash do refresh token
+- [x] Definir TTL configuravel
 
 ### Criterio de pronto
-- [ ] Testes de seguranca para tokens validos e invalidos
-- [ ] Sem persistir segredos em claro
+- [x] Testes de seguranca para tokens validos e invalidos
+- [x] Sem persistir segredos em claro
 
 ---
 
