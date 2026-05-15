@@ -16,6 +16,7 @@ type Config struct {
 	MongoURI       string
 	MongoDBName    string
 	RabbitMQURL    string
+	BcryptCost     int
 }
 
 func Load() Config {
@@ -29,6 +30,11 @@ func Load() Config {
 		MongoURI:    getEnv("MONGO_URI", ""),
 		MongoDBName: getEnv("MONGO_DB_NAME", "auth_db"),
 		RabbitMQURL: getEnv("RABBITMQ_URL", ""),
+		BcryptCost:  getEnvInt("BCRYPT_COST", 12),
+	}
+	// Faixa valida do bcrypt: 4..31. Em valor invalido, usa fallback seguro.
+	if cfg.BcryptCost < 4 || cfg.BcryptCost > 31 {
+		cfg.BcryptCost = 12
 	}
 
 	timeoutSeconds := getEnvInt("REQUEST_TIMEOUT_SECONDS", 10)

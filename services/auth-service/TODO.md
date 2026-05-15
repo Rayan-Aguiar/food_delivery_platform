@@ -147,9 +147,9 @@ Objetivo: implementar casos de uso com fluxo de negocio do auth.
 Objetivo: implementar provedores tecnicos de criptografia e token.
 
 ### Hash de senha
-- [ ] Implementar com bcrypt
-- [ ] Definir custo por ambiente
-- [ ] Cobrir erro de hash/compare
+- [x] Implementar com bcrypt
+- [x] Definir custo por ambiente
+- [x] Cobrir erro de hash/compare
 
 ### JWT
 - [ ] Gerar access token com claims minimas: sub, iat, exp
