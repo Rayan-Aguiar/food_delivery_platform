@@ -13,34 +13,46 @@ import (
 )
 
 type RegisterUserInput struct {
-	Email    string
-	Password string
+	Email     string
+	Password  string
+	UserAgent string
+	IPAddress string
 }
 
 type RegisterUserOutput struct {
 	UserID       string
 	CredentialID string
+	Tokens       valueobjects.AuthTokens
 }
 
 type RegisterUserUseCase struct {
 	credentials    ports.CredentialRepository
+	sessions       ports.RefreshTokenRepository
 	hasher         ports.PasswordHasher
+	tokenService   ports.TokenService
 	clock          ports.Clock
 	idGen          ports.IDGenerator
+	ttl            valueobjects.TokenTTL
 	passwordPolicy valueobjects.PasswordPolicy
 }
 
 func NewRegisterUserUseCase(
 	credentials ports.CredentialRepository,
+	sessions ports.RefreshTokenRepository,
 	hasher ports.PasswordHasher,
+	tokenService ports.TokenService,
 	clock ports.Clock,
 	idGen ports.IDGenerator,
+	ttl valueobjects.TokenTTL,
 ) *RegisterUserUseCase {
 	return &RegisterUserUseCase{
 		credentials:    credentials,
+		sessions:       sessions,
 		hasher:         hasher,
+		tokenService:   tokenService,
 		clock:          clock,
 		idGen:          idGen,
+		ttl:            ttl,
 		passwordPolicy: valueobjects.NewDefaultPasswordPolicy(),
 	}
 }
@@ -84,8 +96,47 @@ func (uc *RegisterUserUseCase) Execute(ctx context.Context, input RegisterUserIn
 		return RegisterUserOutput{}, apperrors.Internal("failed to persist credential", err)
 	}
 
+	// Criar sessão inicial — o usuário já sai logado após o registro.
+	claims := valueobjects.TokenClaims{
+		Subject:   userID,
+		IssuedAt:  now,
+		ExpiresAt: now.Add(uc.ttl.AccessTTL),
+	}
+	accessToken, err := uc.tokenService.GenerateAccessToken(ctx, claims)
+	if err != nil {
+		return RegisterUserOutput{}, apperrors.Internal("failed to generate access token", err)
+	}
+
+	plainRefresh, refreshHash, err := uc.tokenService.GenerateRefreshToken(ctx)
+	if err != nil {
+		return RegisterUserOutput{}, apperrors.Internal("failed to generate refresh token", err)
+	}
+
+	session, err := entities.NewRefreshSession(
+		uc.idGen.NewID(),
+		userID,
+		refreshHash,
+		now.Add(uc.ttl.RefreshTTL),
+		input.UserAgent,
+		input.IPAddress,
+		now,
+	)
+	if err != nil {
+		return RegisterUserOutput{}, apperrors.Internal("failed to build session", err)
+	}
+
+	if err := uc.sessions.Create(ctx, session); err != nil {
+		return RegisterUserOutput{}, apperrors.Internal("failed to persist session", err)
+	}
+
 	return RegisterUserOutput{
 		UserID:       userID,
 		CredentialID: credentialID,
+		Tokens: valueobjects.AuthTokens{
+			AccessToken:  accessToken,
+			RefreshToken: plainRefresh,
+			TokenType:    "Bearer",
+			ExpiresIn:    uc.ttl.AccessSeconds(),
+		},
 	}, nil
 }

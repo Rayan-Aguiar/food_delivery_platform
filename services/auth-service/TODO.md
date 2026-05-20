@@ -123,7 +123,7 @@ Objetivo: implementar casos de uso com fluxo de negocio do auth.
   - [x] Garantir email unico
   - [x] Hash de senha
   - [x] Persistir credencial
-  - [ ] Criar refresh session inicial (opcional no register)
+  - [x] Criar refresh session inicial (opcional no register)
 - LoginUser
   - [x] Buscar credencial por email
   - [x] Comparar hash
@@ -186,7 +186,7 @@ Objetivo: implementar persistencia e garantias de dados.
 - [x] TTL index em expires_at para refresh_tokens
 
 ### Criterio de pronto
-- [ ] CRUD necessario dos casos de uso funcionando
+- [x] CRUD necessario dos casos de uso funcionando
 - [x] Violacao de email unico tratada corretamente
 
 ---
@@ -216,8 +216,8 @@ Objetivo: expor API REST final do auth-service.
 - [x] Rate limit para login/refresh
 
 ### Criterio de pronto
-- [ ] Contratos HTTP estaveis e testados
-- [ ] Erros padronizados em todas as rotas
+- [x] Contratos HTTP estaveis e testados
+- [x] Erros padronizados em todas as rotas
 
 ---
 

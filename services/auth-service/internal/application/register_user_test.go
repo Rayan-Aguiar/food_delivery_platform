@@ -20,6 +20,8 @@ func TestRegisterUserUseCase_Execute(t *testing.T) {
 	validEmail := "user@example.com"
 	validPassword := "Secret1@"
 
+	ttl, _ := valueobjects.NewTokenTTL(15*time.Minute, 7*24*time.Hour)
+
 	buildExistingCred := func() *entities.Credential {
 		email, _ := valueobjects.NewEmail(validEmail)
 		c, _ := entities.NewCredential("cid", "uid", email, "hash", now)
@@ -27,12 +29,14 @@ func TestRegisterUserUseCase_Execute(t *testing.T) {
 	}
 
 	tests := []struct {
-		name     string
-		input    application.RegisterUserInput
-		credRepo *fakeCredentialRepo
-		hasher   *fakeHasher
-		wantCode string
-		wantErr  bool
+		name        string
+		input       application.RegisterUserInput
+		credRepo    *fakeCredentialRepo
+		sessionRepo *fakeSessionRepo
+		hasher      *fakeHasher
+		tokenSvc    *fakeTokenService
+		wantCode    string
+		wantErr     bool
 	}{
 		{
 			name:     "success",
@@ -104,15 +108,66 @@ func TestRegisterUserUseCase_Execute(t *testing.T) {
 			wantErr:  true,
 			wantCode: apperrors.CodeInternal,
 		},
+		{
+			name:     "access token generation error",
+			input:    application.RegisterUserInput{Email: validEmail, Password: validPassword},
+			credRepo: &fakeCredentialRepo{},
+			hasher:   &fakeHasher{},
+			tokenSvc: &fakeTokenService{
+				generateAccessFn: func(_ context.Context, _ valueobjects.TokenClaims) (string, error) {
+					return "", errors.New("jwt failed")
+				},
+			},
+			wantErr:  true,
+			wantCode: apperrors.CodeInternal,
+		},
+		{
+			name:     "refresh token generation error",
+			input:    application.RegisterUserInput{Email: validEmail, Password: validPassword},
+			credRepo: &fakeCredentialRepo{},
+			hasher:   &fakeHasher{},
+			tokenSvc: &fakeTokenService{
+				generateRefreshFn: func(_ context.Context) (string, string, error) {
+					return "", "", errors.New("rand failed")
+				},
+			},
+			wantErr:  true,
+			wantCode: apperrors.CodeInternal,
+		},
+		{
+			name:     "session create error",
+			input:    application.RegisterUserInput{Email: validEmail, Password: validPassword},
+			credRepo: &fakeCredentialRepo{},
+			hasher:   &fakeHasher{},
+			sessionRepo: &fakeSessionRepo{
+				createFn: func(_ context.Context, _ *entities.RefreshSession) error {
+					return errors.New("session insert failed")
+				},
+			},
+			wantErr:  true,
+			wantCode: apperrors.CodeInternal,
+		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+			sessionRepo := tc.sessionRepo
+			if sessionRepo == nil {
+				sessionRepo = &fakeSessionRepo{}
+			}
+			tokenSvc := tc.tokenSvc
+			if tokenSvc == nil {
+				tokenSvc = &fakeTokenService{}
+			}
+
 			uc := application.NewRegisterUserUseCase(
 				tc.credRepo,
+				sessionRepo,
 				tc.hasher,
+				tokenSvc,
 				fixedClock{t: now},
-				&seqIDGen{ids: []string{"cred-id-1", "user-id-1"}},
+				&seqIDGen{ids: []string{"cred-id-1", "user-id-1", "session-id-1"}},
+				ttl,
 			)
 
 			out, err := uc.Execute(ctx, tc.input)
@@ -139,6 +194,12 @@ func TestRegisterUserUseCase_Execute(t *testing.T) {
 			}
 			if out.CredentialID == "" {
 				t.Error("expected non-empty CredentialID")
+			}
+			if out.Tokens.AccessToken == "" {
+				t.Error("expected non-empty access token")
+			}
+			if out.Tokens.RefreshToken == "" {
+				t.Error("expected non-empty refresh token")
 			}
 		})
 	}

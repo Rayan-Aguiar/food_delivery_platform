@@ -67,7 +67,7 @@ func main() {
 	clock := system.Clock{}
 	idGen := system.IDGenerator{}
 
-	registerUC := application.NewRegisterUserUseCase(credRepo, hasher, clock, idGen)
+	registerUC := application.NewRegisterUserUseCase(credRepo, sessionRepo, hasher, tokenService, clock, idGen, ttl)
 	loginUC := application.NewLoginUserUseCase(credRepo, sessionRepo, hasher, tokenService, clock, idGen, ttl)
 	refreshUC := application.NewRefreshAccessTokenUseCase(credRepo, sessionRepo, tokenService, clock, idGen, ttl)
 	logoutUC := application.NewLogoutSessionUseCase(sessionRepo, tokenService)

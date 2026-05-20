@@ -54,6 +54,10 @@ type registerRequest struct {
 type registerResponse struct {
 	UserID       string `json:"user_id"`
 	CredentialID string `json:"credential_id"`
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	TokenType    string `json:"token_type"`
+	ExpiresIn    int64  `json:"expires_in"`
 }
 
 type loginRequest struct {
@@ -90,8 +94,10 @@ func (h *AuthHandlers) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	out, err := h.register.Execute(r.Context(), application.RegisterUserInput{
-		Email:    req.Email,
-		Password: req.Password,
+		Email:     req.Email,
+		Password:  req.Password,
+		UserAgent: r.UserAgent(),
+		IPAddress: extractClientIP(r.RemoteAddr),
 	})
 	if err != nil {
 		writeAppError(w, r, err)
@@ -101,6 +107,10 @@ func (h *AuthHandlers) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	_ = utils.WriteJSON(w, http.StatusCreated, registerResponse{
 		UserID:       out.UserID,
 		CredentialID: out.CredentialID,
+		AccessToken:  out.Tokens.AccessToken,
+		RefreshToken: out.Tokens.RefreshToken,
+		TokenType:    out.Tokens.TokenType,
+		ExpiresIn:    out.Tokens.ExpiresIn,
 	})
 }
 
