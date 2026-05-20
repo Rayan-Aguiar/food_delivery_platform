@@ -15,4 +15,5 @@ var (
 	ErrRefreshTokenExpired     = errors.New("refresh token expired")
 	ErrRefreshTokenRevoked     = errors.New("refresh token revoked")
 	ErrEmptyTokenHash          = errors.New("token hash is required")
+	ErrEmailAlreadyRegistered = errors.New("email already registered")
 )

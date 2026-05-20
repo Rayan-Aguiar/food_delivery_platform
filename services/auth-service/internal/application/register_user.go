@@ -2,7 +2,9 @@ package application
 
 import (
 	"context"
+	"errors"
 
+	domainerrors "food_delivery_platform/services/auth-service/internal/domain/errors"
 	apperrors "food_delivery_platform/shared/errors"
 
 	"food_delivery_platform/services/auth-service/internal/domain/entities"
@@ -76,6 +78,9 @@ func (uc *RegisterUserUseCase) Execute(ctx context.Context, input RegisterUserIn
 	}
 
 	if err := uc.credentials.Create(ctx, cred); err != nil {
+		if errors.Is(err, domainerrors.ErrEmailAlreadyRegistered) {
+			return RegisterUserOutput{}, apperrors.Conflict("email already registered", nil)
+		}
 		return RegisterUserOutput{}, apperrors.Internal("failed to persist credential", err)
 	}
 

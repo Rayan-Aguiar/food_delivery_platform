@@ -6,14 +6,25 @@ import (
 	"time"
 
 	"food_delivery_platform/shared/middleware"
+
+	"golang.org/x/time/rate"
 )
 
-func NewRouter(log *slog.Logger, timeout time.Duration) http.Handler {
+func NewRouter(log *slog.Logger, timeout time.Duration, auth *AuthHandlers) http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /health/live", LiveHandler)
 	mux.HandleFunc("GET /health/ready", ReadyHandler)
 	mux.HandleFunc("GET /auth/health", AuthHealthHandler)
+	if auth != nil {
+		// 5 requisições por minuto por IP, burst de 5 — proteção contra brute-force
+		rl := newIPRateLimiter(rate.Every(12*time.Second), 5)
+
+		mux.HandleFunc("POST /auth/register", auth.RegisterHandler)
+		mux.Handle("POST /auth/login", rl.Middleware(http.HandlerFunc(auth.LoginHandler)))
+		mux.Handle("POST /auth/refresh", rl.Middleware(http.HandlerFunc(auth.RefreshHandler)))
+		mux.HandleFunc("POST /auth/logout", auth.LogoutHandler)
+	}
 
 	mux.HandleFunc("/", NotFoundHandler)
 
@@ -29,12 +40,20 @@ func NewRouter(log *slog.Logger, timeout time.Duration) http.Handler {
 }
 
 func methodGuard(next http.Handler) http.Handler {
+	allowedMethodsByPath := map[string]string{
+		"/health/live":   http.MethodGet,
+		"/health/ready":  http.MethodGet,
+		"/auth/health":   http.MethodGet,
+		"/auth/register": http.MethodPost,
+		"/auth/login":    http.MethodPost,
+		"/auth/refresh":  http.MethodPost,
+		"/auth/logout":   http.MethodPost,
+	}
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/health/live" || r.URL.Path == "/health/ready" || r.URL.Path == "/auth/health" {
-			if r.Method != http.MethodGet {
-				MethodNotAllowedHandler(w, r)
-				return
-			}
+		if allowedMethod, ok := allowedMethodsByPath[r.URL.Path]; ok && r.Method != allowedMethod {
+			MethodNotAllowedHandler(w, r)
+			return
 		}
 		next.ServeHTTP(w, r)
 	})

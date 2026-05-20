@@ -172,22 +172,22 @@ Objetivo: implementar provedores tecnicos de criptografia e token.
 Objetivo: implementar persistencia e garantias de dados.
 
 ### Repositorios
-- [ ] MongoCredentialRepository
-- [ ] MongoRefreshTokenRepository
+- [x] MongoCredentialRepository
+- [x] MongoRefreshTokenRepository
 
 ### Collections
-- [ ] credentials
-- [ ] refresh_tokens
+- [x] credentials
+- [x] refresh_tokens
 - [ ] auth_audit (opcional fase 2)
 
 ### Indices
-- [ ] unique index em email
-- [ ] index por user_id
-- [ ] TTL index em expires_at para refresh_tokens
+- [x] unique index em email
+- [x] index por user_id
+- [x] TTL index em expires_at para refresh_tokens
 
 ### Criterio de pronto
 - [ ] CRUD necessario dos casos de uso funcionando
-- [ ] Violacao de email unico tratada corretamente
+- [x] Violacao de email unico tratada corretamente
 
 ---
 
@@ -195,25 +195,25 @@ Objetivo: implementar persistencia e garantias de dados.
 Objetivo: expor API REST final do auth-service.
 
 ### Endpoints
-- [ ] POST /auth/register
-- [ ] POST /auth/login
-- [ ] POST /auth/refresh
-- [ ] POST /auth/logout
-- [ ] GET /auth/health
+- [x] POST /auth/register
+- [x] POST /auth/login
+- [x] POST /auth/refresh
+- [x] POST /auth/logout
+- [x] GET /auth/health
 
 ### DTOs
-- [ ] Request/Response para register
-- [ ] Request/Response para login
-- [ ] Request/Response para refresh
-- [ ] Request/Response para logout
+- [x] Request/Response para register
+- [x] Request/Response para login
+- [x] Request/Response para refresh
+- [x] Request/Response para logout
 
 ### Middlewares
-- [ ] Request ID
-- [ ] Correlation ID
-- [ ] Recovery
-- [ ] Access log
-- [ ] Timeout
-- [ ] Rate limit para login/refresh
+- [x] Request ID
+- [x] Correlation ID
+- [x] Recovery
+- [x] Access log
+- [x] Timeout
+- [x] Rate limit para login/refresh
 
 ### Criterio de pronto
 - [ ] Contratos HTTP estaveis e testados
