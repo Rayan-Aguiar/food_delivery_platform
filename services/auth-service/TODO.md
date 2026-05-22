@@ -316,25 +316,25 @@ Objetivo: padronizar contrato para gateway e consumidores.
 Objetivo: rodar auth-service conteinerizado com dependencias.
 
 ### Dockerfile
-- [ ] Multi-stage build
-- [ ] Imagem final enxuta
-- [ ] Usuario nao-root
-- [ ] Healthcheck HTTP
+- [x] Multi-stage build
+- [x] Imagem final enxuta
+- [x] Usuario nao-root
+- [x] Healthcheck HTTP
 
 ### Runtime
-- [ ] Variaveis de ambiente documentadas
-- [ ] Conexao Mongo por env
-- [ ] Conexao Rabbit por env
-- [ ] Exposicao de porta HTTP
+- [x] Variaveis de ambiente documentadas
+- [x] Conexao Mongo por env
+- [x] Conexao Rabbit por env
+- [x] Exposicao de porta HTTP
 
 ### Compose
-- [ ] Integracao com compose local do projeto
-- [ ] Dependencia de Mongo e Rabbit
+- [x] Integracao com compose local do projeto
+- [x] Dependencia de Mongo e Rabbit
 
 ### Criterio de pronto
-- [ ] docker build concluido
-- [ ] container sobe e responde health
-- [ ] endpoints auth funcionam em ambiente containerizado
+- [x] docker build concluido
+- [x] container sobe e responde health
+- [x] endpoints auth funcionam em ambiente containerizado
 
 ---
 

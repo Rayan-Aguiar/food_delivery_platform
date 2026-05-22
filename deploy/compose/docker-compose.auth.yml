@@ -1,0 +1,64 @@
+services:
+  auth-mongo:
+    image: ${AUTH_MONGO_IMAGE}
+    container_name: ${AUTH_MONGO_CONTAINER_NAME}
+    restart: ${AUTH_RESTART_POLICY}
+    environment:
+      MONGO_INITDB_DATABASE: ${MONGO_DB_NAME}
+    ports:
+      - "${AUTH_MONGO_PORT}:27017"
+    volumes:
+      - auth_mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+
+  auth-rabbitmq:
+    image: ${AUTH_RABBITMQ_IMAGE}
+    container_name: ${AUTH_RABBITMQ_CONTAINER_NAME}
+    restart: ${AUTH_RESTART_POLICY}
+    ports:
+      - "${AUTH_RABBITMQ_PORT}:5672"
+      - "${AUTH_RABBITMQ_MANAGEMENT_PORT}:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+
+  auth-service:
+    build:
+      context: ../../
+      dockerfile: services/auth-service/Dockerfile
+    container_name: ${AUTH_SERVICE_CONTAINER_NAME}
+    restart: ${AUTH_RESTART_POLICY}
+    depends_on:
+      auth-mongo:
+        condition: service_healthy
+      auth-rabbitmq:
+        condition: service_healthy
+    environment:
+      SERVICE_NAME: ${SERVICE_NAME}
+      HTTP_PORT: ${HTTP_PORT}
+      LOG_LEVEL: ${LOG_LEVEL}
+      REQUEST_TIMEOUT_SECONDS: ${REQUEST_TIMEOUT_SECONDS}
+      MONGO_URI: ${MONGO_URI}
+      MONGO_DB_NAME: ${MONGO_DB_NAME}
+      RABBITMQ_URL: ${RABBITMQ_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ISSUER: ${JWT_ISSUER}
+      JWT_ACCESS_TTL: ${JWT_ACCESS_TTL}
+      JWT_REFRESH_TTL: ${JWT_REFRESH_TTL}
+      BCRYPT_COST: ${BCRYPT_COST}
+    ports:
+      - "${AUTH_SERVICE_PORT}:${HTTP_PORT}"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:${HTTP_PORT}/health/live"]
+      interval: 15s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  auth_mongo_data:
