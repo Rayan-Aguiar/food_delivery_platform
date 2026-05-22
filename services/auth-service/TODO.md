@@ -225,22 +225,22 @@ Objetivo: expor API REST final do auth-service.
 Objetivo: publicar eventos de autenticacao para integracao com outros servicos.
 
 ### Eventos produzidos
-- [ ] user.auth.registered.v1
-- [ ] auth.login.succeeded.v1
+- [x] user.auth.registered.v1
+- [x] auth.login.succeeded.v1
 
 ### Publicacao
-- [ ] Integrar broker compartilhado
-- [ ] Definir exchange e routing keys
-- [ ] Propagar correlation_id nos headers
+- [x] Integrar broker compartilhado
+- [x] Definir exchange e routing keys
+- [x] Propagar correlation_id nos headers
 
 ### Confiabilidade
-- [ ] Estrategia minima de retry de publish
-- [ ] Log de falha de publish com contexto
-- [ ] Preparar suporte a outbox (fase posterior)
+- [x] Estrategia minima de retry de publish
+- [x] Log de falha de publish com contexto
+- [x] Preparar suporte a outbox (fase posterior)
 
 ### Criterio de pronto
-- [ ] Eventos publicados com envelope padrao
-- [ ] Payload validado e versionado
+- [x] Eventos publicados com envelope padrao
+- [x] Payload validado e versionado
 
 ---
 

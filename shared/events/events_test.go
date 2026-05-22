@@ -71,6 +71,7 @@ func TestEventNames_NotEmptyAndUnique(t *testing.T) {
 		DeliveryCompleted,
 		DeliveryFailed,
 		UserAuthRegistered,
+		AuthLoginSucceeded,
 		NotificationSent,
 		NotificationFailed,
 	}

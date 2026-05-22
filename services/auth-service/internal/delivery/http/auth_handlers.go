@@ -11,6 +11,7 @@ import (
 
 	"food_delivery_platform/services/auth-service/internal/application"
 	apperrors "food_delivery_platform/shared/errors"
+	"food_delivery_platform/shared/middleware"
 	"food_delivery_platform/shared/utils"
 )
 
@@ -94,10 +95,14 @@ func (h *AuthHandlers) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	out, err := h.register.Execute(r.Context(), application.RegisterUserInput{
-		Email:     req.Email,
-		Password:  req.Password,
-		UserAgent: r.UserAgent(),
-		IPAddress: extractClientIP(r.RemoteAddr),
+		Email:          req.Email,
+		Password:       req.Password,
+		UserAgent:      r.UserAgent(),
+		IPAddress:      extractClientIP(r.RemoteAddr),
+		CorrelationID:  utils.StringFromContext(r.Context(), middleware.CorrelationIDKey),
+		CausationID:    utils.StringFromContext(r.Context(), middleware.RequestIDKey),
+		Traceparent:    r.Header.Get("traceparent"),
+		IdempotencyKey: r.Header.Get("Idempotency-Key"),
 	})
 	if err != nil {
 		writeAppError(w, r, err)
@@ -127,10 +132,14 @@ func (h *AuthHandlers) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	out, err := h.login.Execute(r.Context(), application.LoginUserInput{
-		Email:     req.Email,
-		Password:  req.Password,
-		UserAgent: r.UserAgent(),
-		IPAddress: extractClientIP(r.RemoteAddr),
+		Email:          req.Email,
+		Password:       req.Password,
+		UserAgent:      r.UserAgent(),
+		IPAddress:      extractClientIP(r.RemoteAddr),
+		CorrelationID:  utils.StringFromContext(r.Context(), middleware.CorrelationIDKey),
+		CausationID:    utils.StringFromContext(r.Context(), middleware.RequestIDKey),
+		Traceparent:    r.Header.Get("traceparent"),
+		IdempotencyKey: r.Header.Get("Idempotency-Key"),
 	})
 	if err != nil {
 		writeAppError(w, r, err)

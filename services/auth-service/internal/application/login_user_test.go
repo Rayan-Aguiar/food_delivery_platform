@@ -10,6 +10,7 @@ import (
 
 	"food_delivery_platform/services/auth-service/internal/application"
 	"food_delivery_platform/services/auth-service/internal/domain/entities"
+	"food_delivery_platform/services/auth-service/internal/domain/ports"
 	"food_delivery_platform/services/auth-service/internal/domain/valueobjects"
 )
 
@@ -207,5 +208,81 @@ func TestLoginUserUseCase_Execute(t *testing.T) {
 				t.Errorf("expected TokenType Bearer, got %q", out.Tokens.TokenType)
 			}
 		})
+	}
+}
+
+func TestLoginUserUseCase_PublishesLoginSucceededEvent(t *testing.T) {
+	ctx := context.Background()
+	now := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
+	ttl := mustTokenTTL(15*time.Minute, 7*24*time.Hour)
+	eventsPublisher := &fakeAuthEventPublisher{}
+
+	uc := application.NewLoginUserUseCase(
+		&fakeCredentialRepo{getByEmailFn: func(_ context.Context, _ string) (*entities.Credential, error) {
+			return mustActiveCred(t, now), nil
+		}},
+		&fakeSessionRepo{},
+		&fakeHasher{},
+		&fakeTokenService{},
+		fixedClock{t: now},
+		&seqIDGen{ids: []string{"session-id-1"}},
+		ttl,
+		eventsPublisher,
+	)
+
+	_, err := uc.Execute(ctx, application.LoginUserInput{
+		Email:          "user@example.com",
+		Password:       "Secret1@",
+		CorrelationID:  "corr-1",
+		CausationID:    "req-1",
+		Traceparent:    "00-aabbccddeeff00112233445566778899-0011223344556677-01",
+		IdempotencyKey: "idem-1",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(eventsPublisher.loginCalls) != 1 {
+		t.Fatalf("expected 1 published login event, got %d", len(eventsPublisher.loginCalls))
+	}
+	got := eventsPublisher.loginCalls[0]
+	if got.UserID != "user-1" {
+		t.Errorf("user id = %q, want %q", got.UserID, "user-1")
+	}
+	if got.CorrelationID != "corr-1" {
+		t.Errorf("correlation id = %q, want %q", got.CorrelationID, "corr-1")
+	}
+}
+
+func TestLoginUserUseCase_PublishFailureIsBestEffort(t *testing.T) {
+	ctx := context.Background()
+	now := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
+	ttl := mustTokenTTL(15*time.Minute, 7*24*time.Hour)
+	eventsPublisher := &fakeAuthEventPublisher{
+		publishLoginFn: func(context.Context, ports.LoginSucceededEvent) error { return failPublisherError() },
+	}
+
+	uc := application.NewLoginUserUseCase(
+		&fakeCredentialRepo{getByEmailFn: func(_ context.Context, _ string) (*entities.Credential, error) {
+			return mustActiveCred(t, now), nil
+		}},
+		&fakeSessionRepo{},
+		&fakeHasher{},
+		&fakeTokenService{},
+		fixedClock{t: now},
+		&seqIDGen{ids: []string{"session-id-1"}},
+		ttl,
+		eventsPublisher,
+	)
+
+	out, err := uc.Execute(ctx, application.LoginUserInput{Email: "user@example.com", Password: "Secret1@"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if out.UserID == "" {
+		t.Fatal("expected successful login output")
+	}
+	if len(eventsPublisher.loginCalls) != 1 {
+		t.Fatalf("expected 1 publish attempt, got %d", len(eventsPublisher.loginCalls))
 	}
 }

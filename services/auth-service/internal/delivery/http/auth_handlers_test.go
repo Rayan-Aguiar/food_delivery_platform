@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"food_delivery_platform/services/auth-service/internal/application"
 	"food_delivery_platform/shared/contracts"
@@ -240,6 +241,70 @@ func TestLoginHandler_SuccessBody(t *testing.T) {
 	}
 	if resp.TokenType != "Bearer" {
 		t.Errorf("token_type = %q, want Bearer", resp.TokenType)
+	}
+}
+
+func TestRegisterHandler_PropagatesContextMetadata(t *testing.T) {
+	var got application.RegisterUserInput
+	h := NewAuthHandlers(&fakeRegister{fn: func(_ context.Context, in application.RegisterUserInput) (application.RegisterUserOutput, error) {
+		got = in
+		return application.RegisterUserOutput{UserID: "user-1", CredentialID: "cred-1", Tokens: defaultTokens}, nil
+	}}, &fakeLogin{}, &fakeRefresh{}, &fakeLogout{})
+
+	r := httptest.NewRequest(http.MethodPost, "/auth/register", strings.NewReader(`{"email":"user@example.com","password":"Valid1!"}`))
+	r.Header.Set("X-Correlation-ID", "corr-123")
+	r.Header.Set("X-Request-ID", "req-123")
+	r.Header.Set("traceparent", "00-aabbccddeeff00112233445566778899-0011223344556677-01")
+	r.Header.Set("Idempotency-Key", "idem-123")
+	r.RemoteAddr = "10.0.0.1:5000"
+
+	w := httptest.NewRecorder()
+	httpHandler := NewRouter(silentLogger, 5*time.Second, h)
+	httpHandler.ServeHTTP(w, r)
+
+	if w.Code != http.StatusCreated {
+		t.Fatalf("status = %d, want 201", w.Code)
+	}
+	if got.CorrelationID != "corr-123" {
+		t.Errorf("correlation id = %q, want %q", got.CorrelationID, "corr-123")
+	}
+	if got.CausationID != "req-123" {
+		t.Errorf("causation id = %q, want %q", got.CausationID, "req-123")
+	}
+	if got.Traceparent == "" || got.IdempotencyKey != "idem-123" {
+		t.Errorf("traceparent/idempotency propagation failed: trace=%q idem=%q", got.Traceparent, got.IdempotencyKey)
+	}
+}
+
+func TestLoginHandler_PropagatesContextMetadata(t *testing.T) {
+	var got application.LoginUserInput
+	h := NewAuthHandlers(&fakeRegister{}, &fakeLogin{fn: func(_ context.Context, in application.LoginUserInput) (application.LoginUserOutput, error) {
+		got = in
+		return application.LoginUserOutput{UserID: "user-1", Tokens: defaultTokens}, nil
+	}}, &fakeRefresh{}, &fakeLogout{})
+
+	r := httptest.NewRequest(http.MethodPost, "/auth/login", strings.NewReader(`{"email":"user@example.com","password":"Valid1!"}`))
+	r.Header.Set("X-Correlation-ID", "corr-xyz")
+	r.Header.Set("X-Request-ID", "req-xyz")
+	r.Header.Set("traceparent", "00-aabbccddeeff00112233445566778899-0011223344556677-01")
+	r.Header.Set("Idempotency-Key", "idem-xyz")
+	r.RemoteAddr = "10.0.0.1:5001"
+
+	w := httptest.NewRecorder()
+	httpHandler := NewRouter(silentLogger, 5*time.Second, h)
+	httpHandler.ServeHTTP(w, r)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", w.Code)
+	}
+	if got.CorrelationID != "corr-xyz" {
+		t.Errorf("correlation id = %q, want %q", got.CorrelationID, "corr-xyz")
+	}
+	if got.CausationID != "req-xyz" {
+		t.Errorf("causation id = %q, want %q", got.CausationID, "req-xyz")
+	}
+	if got.Traceparent == "" || got.IdempotencyKey != "idem-xyz" {
+		t.Errorf("traceparent/idempotency propagation failed: trace=%q idem=%q", got.Traceparent, got.IdempotencyKey)
 	}
 }
 

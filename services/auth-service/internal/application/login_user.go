@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"time"
 
 	apperrors "food_delivery_platform/shared/errors"
 
@@ -15,6 +16,11 @@ type LoginUserInput struct {
 	Password  string
 	UserAgent string
 	IPAddress string
+
+	CorrelationID  string
+	CausationID    string
+	Traceparent    string
+	IdempotencyKey string
 }
 
 type LoginUserOutput struct {
@@ -30,6 +36,7 @@ type LoginUserUseCase struct {
 	clock        ports.Clock
 	idGen        ports.IDGenerator
 	ttl          valueobjects.TokenTTL
+	events       ports.AuthEventPublisher
 }
 
 func NewLoginUserUseCase(
@@ -40,7 +47,13 @@ func NewLoginUserUseCase(
 	clock ports.Clock,
 	idGen ports.IDGenerator,
 	ttl valueobjects.TokenTTL,
+	eventPublisher ...ports.AuthEventPublisher,
 ) *LoginUserUseCase {
+	publisher := ports.AuthEventPublisher(noopAuthEventPublisher{})
+	if len(eventPublisher) > 0 && eventPublisher[0] != nil {
+		publisher = eventPublisher[0]
+	}
+
 	return &LoginUserUseCase{
 		credentials:  credentials,
 		sessions:     sessions,
@@ -49,6 +62,7 @@ func NewLoginUserUseCase(
 		clock:        clock,
 		idGen:        idGen,
 		ttl:          ttl,
+		events:       publisher,
 	}
 }
 
@@ -113,6 +127,16 @@ func (uc *LoginUserUseCase) Execute(ctx context.Context, input LoginUserInput) (
 	if err := uc.sessions.Create(ctx, session); err != nil {
 		return LoginUserOutput{}, apperrors.Internal("failed to persist session", err)
 	}
+
+	// Best effort: o login continua bem-sucedido mesmo com falha de publicação.
+	_ = uc.events.PublishLoginSucceeded(ctx, ports.LoginSucceededEvent{
+		UserID:         cred.UserID,
+		LoggedAt:       now.UTC().Format(time.RFC3339Nano),
+		CorrelationID:  input.CorrelationID,
+		CausationID:    input.CausationID,
+		Traceparent:    input.Traceparent,
+		IdempotencyKey: input.IdempotencyKey,
+	})
 
 	return LoginUserOutput{
 		UserID: cred.UserID,

@@ -10,6 +10,7 @@ import (
 
 	"food_delivery_platform/services/auth-service/internal/application"
 	"food_delivery_platform/services/auth-service/internal/domain/entities"
+	"food_delivery_platform/services/auth-service/internal/domain/ports"
 	"food_delivery_platform/services/auth-service/internal/domain/valueobjects"
 )
 
@@ -202,5 +203,80 @@ func TestRegisterUserUseCase_Execute(t *testing.T) {
 				t.Error("expected non-empty refresh token")
 			}
 		})
+	}
+}
+
+func TestRegisterUserUseCase_PublishesUserRegisteredEvent(t *testing.T) {
+	ctx := context.Background()
+	now := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
+	ttl, _ := valueobjects.NewTokenTTL(15*time.Minute, 7*24*time.Hour)
+	eventsPublisher := &fakeAuthEventPublisher{}
+
+	uc := application.NewRegisterUserUseCase(
+		&fakeCredentialRepo{},
+		&fakeSessionRepo{},
+		&fakeHasher{},
+		&fakeTokenService{},
+		fixedClock{t: now},
+		&seqIDGen{ids: []string{"cred-id-1", "user-id-1", "session-id-1"}},
+		ttl,
+		eventsPublisher,
+	)
+
+	_, err := uc.Execute(ctx, application.RegisterUserInput{
+		Email:          "user@example.com",
+		Password:       "Secret1@",
+		CorrelationID:  "corr-1",
+		CausationID:    "req-1",
+		Traceparent:    "00-aabbccddeeff00112233445566778899-0011223344556677-01",
+		IdempotencyKey: "idem-1",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(eventsPublisher.registeredCalls) != 1 {
+		t.Fatalf("expected 1 published register event, got %d", len(eventsPublisher.registeredCalls))
+	}
+	got := eventsPublisher.registeredCalls[0]
+	if got.UserID != "user-id-1" {
+		t.Errorf("user id = %q, want %q", got.UserID, "user-id-1")
+	}
+	if got.Email != "user@example.com" {
+		t.Errorf("email = %q, want %q", got.Email, "user@example.com")
+	}
+	if got.CorrelationID != "corr-1" {
+		t.Errorf("correlation id = %q, want %q", got.CorrelationID, "corr-1")
+	}
+}
+
+func TestRegisterUserUseCase_PublishFailureIsBestEffort(t *testing.T) {
+	ctx := context.Background()
+	now := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
+	ttl, _ := valueobjects.NewTokenTTL(15*time.Minute, 7*24*time.Hour)
+	eventsPublisher := &fakeAuthEventPublisher{
+		publishRegisteredFn: func(context.Context, ports.UserRegisteredEvent) error { return failPublisherError() },
+	}
+
+	uc := application.NewRegisterUserUseCase(
+		&fakeCredentialRepo{},
+		&fakeSessionRepo{},
+		&fakeHasher{},
+		&fakeTokenService{},
+		fixedClock{t: now},
+		&seqIDGen{ids: []string{"cred-id-1", "user-id-1", "session-id-1"}},
+		ttl,
+		eventsPublisher,
+	)
+
+	out, err := uc.Execute(ctx, application.RegisterUserInput{Email: "user@example.com", Password: "Secret1@"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if out.UserID == "" {
+		t.Fatal("expected successful register output")
+	}
+	if len(eventsPublisher.registeredCalls) != 1 {
+		t.Fatalf("expected 1 publish attempt, got %d", len(eventsPublisher.registeredCalls))
 	}
 }

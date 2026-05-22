@@ -14,10 +14,13 @@ import (
 	"food_delivery_platform/services/auth-service/internal/application"
 	"food_delivery_platform/services/auth-service/internal/config"
 	httpdelivery "food_delivery_platform/services/auth-service/internal/delivery/http"
+	"food_delivery_platform/services/auth-service/internal/domain/ports"
 	"food_delivery_platform/services/auth-service/internal/domain/valueobjects"
+	"food_delivery_platform/services/auth-service/internal/infrastructure/messaging"
 	mongorepo "food_delivery_platform/services/auth-service/internal/infrastructure/mongo"
 	"food_delivery_platform/services/auth-service/internal/infrastructure/security"
 	"food_delivery_platform/services/auth-service/internal/infrastructure/system"
+	"food_delivery_platform/shared/broker"
 	"food_delivery_platform/shared/logger"
 
 	mdriver "go.mongodb.org/mongo-driver/mongo"
@@ -67,8 +70,35 @@ func main() {
 	clock := system.Clock{}
 	idGen := system.IDGenerator{}
 
-	registerUC := application.NewRegisterUserUseCase(credRepo, sessionRepo, hasher, tokenService, clock, idGen, ttl)
-	loginUC := application.NewLoginUserUseCase(credRepo, sessionRepo, hasher, tokenService, clock, idGen, ttl)
+	var eventPublisher ports.AuthEventPublisher
+	var rabbit *broker.Rabbit
+	outboxRepo := mongorepo.NewOutboxRepository(db)
+	if cfg.RabbitMQURL != "" {
+		rabbit, err = broker.New(broker.Config{URL: cfg.RabbitMQURL})
+		if err != nil {
+			log.Error("failed to connect rabbitmq", "error", err.Error())
+			os.Exit(1)
+		}
+
+		ch := rabbit.Channel()
+		if err := ch.ExchangeDeclare("auth.exchange", "topic", true, false, false, false, nil); err != nil {
+			log.Error("failed to declare auth exchange", "error", err.Error())
+			_ = rabbit.Close()
+			os.Exit(1)
+		}
+
+		eventPublisher = messaging.NewRabbitAuthEventPublisher(
+			ch,
+			"auth.exchange",
+			cfg.ServiceName,
+			log,
+			broker.RetryPolicy{MaxAttempts: 3, BaseDelay: 200 * time.Millisecond, MaxDelay: 2 * time.Second},
+			outboxRepo,
+		)
+	}
+
+	registerUC := application.NewRegisterUserUseCase(credRepo, sessionRepo, hasher, tokenService, clock, idGen, ttl, eventPublisher)
+	loginUC := application.NewLoginUserUseCase(credRepo, sessionRepo, hasher, tokenService, clock, idGen, ttl, eventPublisher)
 	refreshUC := application.NewRefreshAccessTokenUseCase(credRepo, sessionRepo, tokenService, clock, idGen, ttl)
 	logoutUC := application.NewLogoutSessionUseCase(sessionRepo, tokenService)
 	authHandlers := httpdelivery.NewAuthHandlers(registerUC, loginUC, refreshUC, logoutUC)
@@ -88,10 +118,10 @@ func main() {
 		}
 	}()
 
-	waitForShutdown(log, server, client)
+	waitForShutdown(log, server, client, rabbit)
 }
 
-func waitForShutdown(log *slog.Logger, server *http.Server, mongoClient *mdriver.Client) {
+func waitForShutdown(log *slog.Logger, server *http.Server, mongoClient *mdriver.Client, rabbit *broker.Rabbit) {
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 	<-sigCh
@@ -107,6 +137,11 @@ func waitForShutdown(log *slog.Logger, server *http.Server, mongoClient *mdriver
 	if mongoClient != nil {
 		if err := mongoClient.Disconnect(ctx); err != nil {
 			log.Error("mongo disconnect failed", "error", err.Error())
+		}
+	}
+	if rabbit != nil {
+		if err := rabbit.Close(); err != nil {
+			log.Error("rabbit disconnect failed", "error", err.Error())
 		}
 	}
 	log.Info("server stopped")

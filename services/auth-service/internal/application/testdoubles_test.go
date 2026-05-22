@@ -2,9 +2,11 @@ package application_test
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"food_delivery_platform/services/auth-service/internal/domain/entities"
+	"food_delivery_platform/services/auth-service/internal/domain/ports"
 	"food_delivery_platform/services/auth-service/internal/domain/valueobjects"
 )
 
@@ -173,4 +175,34 @@ func (g *seqIDGen) NewID() string {
 	id := g.ids[g.i%len(g.ids)]
 	g.i++
 	return id
+}
+
+// ── Auth Event Publisher ─────────────────────────────────────────────────────
+
+type fakeAuthEventPublisher struct {
+	publishRegisteredFn func(context.Context, ports.UserRegisteredEvent) error
+	publishLoginFn      func(context.Context, ports.LoginSucceededEvent) error
+
+	registeredCalls []ports.UserRegisteredEvent
+	loginCalls      []ports.LoginSucceededEvent
+}
+
+func (f *fakeAuthEventPublisher) PublishUserRegistered(ctx context.Context, in ports.UserRegisteredEvent) error {
+	f.registeredCalls = append(f.registeredCalls, in)
+	if f.publishRegisteredFn != nil {
+		return f.publishRegisteredFn(ctx, in)
+	}
+	return nil
+}
+
+func (f *fakeAuthEventPublisher) PublishLoginSucceeded(ctx context.Context, in ports.LoginSucceededEvent) error {
+	f.loginCalls = append(f.loginCalls, in)
+	if f.publishLoginFn != nil {
+		return f.publishLoginFn(ctx, in)
+	}
+	return nil
+}
+
+func failPublisherError() error {
+	return errors.New("publish failed")
 }

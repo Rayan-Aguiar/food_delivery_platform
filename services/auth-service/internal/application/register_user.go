@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"errors"
+	"time"
 
 	domainerrors "food_delivery_platform/services/auth-service/internal/domain/errors"
 	apperrors "food_delivery_platform/shared/errors"
@@ -17,6 +18,11 @@ type RegisterUserInput struct {
 	Password  string
 	UserAgent string
 	IPAddress string
+
+	CorrelationID  string
+	CausationID    string
+	Traceparent    string
+	IdempotencyKey string
 }
 
 type RegisterUserOutput struct {
@@ -33,6 +39,7 @@ type RegisterUserUseCase struct {
 	clock          ports.Clock
 	idGen          ports.IDGenerator
 	ttl            valueobjects.TokenTTL
+	events         ports.AuthEventPublisher
 	passwordPolicy valueobjects.PasswordPolicy
 }
 
@@ -44,7 +51,13 @@ func NewRegisterUserUseCase(
 	clock ports.Clock,
 	idGen ports.IDGenerator,
 	ttl valueobjects.TokenTTL,
+	eventPublisher ...ports.AuthEventPublisher,
 ) *RegisterUserUseCase {
+	publisher := ports.AuthEventPublisher(noopAuthEventPublisher{})
+	if len(eventPublisher) > 0 && eventPublisher[0] != nil {
+		publisher = eventPublisher[0]
+	}
+
 	return &RegisterUserUseCase{
 		credentials:    credentials,
 		sessions:       sessions,
@@ -53,6 +66,7 @@ func NewRegisterUserUseCase(
 		clock:          clock,
 		idGen:          idGen,
 		ttl:            ttl,
+		events:         publisher,
 		passwordPolicy: valueobjects.NewDefaultPasswordPolicy(),
 	}
 }
@@ -128,6 +142,17 @@ func (uc *RegisterUserUseCase) Execute(ctx context.Context, input RegisterUserIn
 	if err := uc.sessions.Create(ctx, session); err != nil {
 		return RegisterUserOutput{}, apperrors.Internal("failed to persist session", err)
 	}
+
+	// Best effort: o registro continua bem-sucedido mesmo com falha de publicação.
+	_ = uc.events.PublishUserRegistered(ctx, ports.UserRegisteredEvent{
+		UserID:         userID,
+		Email:          email.String(),
+		RegisteredAt:   now.UTC().Format(time.RFC3339Nano),
+		CorrelationID:  input.CorrelationID,
+		CausationID:    input.CausationID,
+		Traceparent:    input.Traceparent,
+		IdempotencyKey: input.IdempotencyKey,
+	})
 
 	return RegisterUserOutput{
 		UserID:       userID,
