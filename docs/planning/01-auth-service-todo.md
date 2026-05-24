@@ -1,6 +1,6 @@
 # Auth Service - Plano Detalhado
 
-## 1. Visao geral
+## 1. Visão geral
 Servico responsavel por identidade: registro, login, emissao de JWT, refresh token e revogacao.
 
 ## 2. Responsabilidades

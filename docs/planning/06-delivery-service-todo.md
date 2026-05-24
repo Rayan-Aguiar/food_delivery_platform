@@ -1,6 +1,6 @@
 # Delivery Service - Plano Detalhado
 
-## 1. Visao geral
+## 1. Visão geral
 Servico de alocacao de entregador e rastreamento da entrega.
 
 ## 2. Responsabilidades

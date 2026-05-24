@@ -1,6 +1,6 @@
 # Restaurant Service - Plano Detalhado
 
-## 1. Visao geral
+## 1. Visão geral
 Servico de catalogo: restaurantes, cardapio, categorias e disponibilidade de itens.
 
 ## 2. Responsabilidades

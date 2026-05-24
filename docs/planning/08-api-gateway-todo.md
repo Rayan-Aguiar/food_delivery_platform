@@ -1,6 +1,6 @@
 # API Gateway - Plano Detalhado
 
-## 1. Visao geral
+## 1. Visão geral
 Ponto unico de entrada para clientes, responsavel por roteamento, autenticacao, rate limit e observabilidade na borda.
 
 ## 2. Responsabilidades

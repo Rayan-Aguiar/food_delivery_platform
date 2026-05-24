@@ -36,7 +36,7 @@ internal/domain/
     system.go
 ```
 
-## Visao geral das pastas
+## Visão geral das pastas
 
 ### entities
 Contem as entidades de dominio. Entidade e um objeto com identidade propria e ciclo de vida.

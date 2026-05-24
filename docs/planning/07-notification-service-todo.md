@@ -1,6 +1,6 @@
 # Notification Service - Plano Detalhado
 
-## 1. Visao geral
+## 1. Visão geral
 Servico de notificacao multi-canal (email, SMS mock, push mock) acionado por eventos de negocio.
 
 ## 2. Responsabilidades

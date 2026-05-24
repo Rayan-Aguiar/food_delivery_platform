@@ -1,6 +1,6 @@
 # Order Service - Plano Detalhado
 
-## 1. Visao geral
+## 1. Visão geral
 Servico central do dominio de pedidos e orquestracao da Saga de compra/entrega.
 
 ## 2. Responsabilidades

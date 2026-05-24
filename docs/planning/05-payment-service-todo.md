@@ -1,6 +1,6 @@
 # Payment Service - Plano Detalhado
 
-## 1. Visao geral
+## 1. Visão geral
 Servico financeiro para autorizacao de pagamento, controle de transacoes e resultado da etapa financeira da saga.
 
 ## 2. Responsabilidades

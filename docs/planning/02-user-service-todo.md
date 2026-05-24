@@ -1,6 +1,6 @@
 # User Service - Plano Detalhado
 
-## 1. Visao geral
+## 1. Visão geral
 Servico de perfil e dados de usuario, incluindo endereco e historico de pedidos consultavel.
 
 ## 2. Responsabilidades
