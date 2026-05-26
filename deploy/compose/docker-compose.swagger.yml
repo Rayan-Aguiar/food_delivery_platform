@@ -1,0 +1,11 @@
+services:
+  swagger-ui:
+    image: swaggerapi/swagger-ui:v5.17.14
+    container_name: auth-swagger-ui
+    restart: ${AUTH_RESTART_POLICY:-unless-stopped}
+    ports:
+      - "8085:8080"
+    environment:
+      SWAGGER_JSON: /spec/openapi.v1.yaml
+    volumes:
+      - ../../services/auth-service/docs/openapi:/spec:ro

@@ -23,6 +23,25 @@
 - `POST /auth/refresh`
 - `POST /auth/logout`
 
+## OpenAPI
+- Spec versionada: `docs/openapi/openapi.v1.yaml`
+- Guia de versionamento: `docs/openapi/README.md`
+
+### Validar spec
+```bash
+cd services/auth-service
+npx -y @redocly/cli@latest lint docs/openapi/openapi.v1.yaml
+```
+
+### Abrir com Swagger UI (Docker)
+```bash
+cd deploy/compose
+docker compose --env-file .env.auth -f docker-compose.swagger.yml up -d
+```
+
+URL local:
+- `http://localhost:8085`
+
 ## Executar local
 ```bash
 cd services/auth-service

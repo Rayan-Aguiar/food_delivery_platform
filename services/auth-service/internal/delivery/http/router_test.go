@@ -189,3 +189,40 @@ func TestRouter_RequestIDPropagatedInErrorResponse(t *testing.T) {
 		t.Error("request_id deve ser preenchido pelo middleware RequestID")
 	}
 }
+
+func TestRouter_CORSPreflight(t *testing.T) {
+	r := httptest.NewRequest(http.MethodOptions, "/auth/login", nil)
+	r.Header.Set("Origin", "http://localhost:8085")
+	r.Header.Set("Access-Control-Request-Method", http.MethodPost)
+	w := httptest.NewRecorder()
+
+	newTestRouter().ServeHTTP(w, r)
+
+	if w.Code != http.StatusNoContent {
+		t.Fatalf("status = %d, want 204", w.Code)
+	}
+	if got := w.Header().Get("Access-Control-Allow-Origin"); got != "*" {
+		t.Fatalf("allow-origin = %q, want *", got)
+	}
+	if got := w.Header().Get("Access-Control-Allow-Methods"); got == "" {
+		t.Fatal("expected Access-Control-Allow-Methods header")
+	}
+}
+
+func TestRouter_CORSHeadersOnRegularRequest(t *testing.T) {
+	r := httptest.NewRequest(http.MethodGet, "/health/live", nil)
+	r.Header.Set("Origin", "http://localhost:8085")
+	w := httptest.NewRecorder()
+
+	newTestRouter().ServeHTTP(w, r)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", w.Code)
+	}
+	if got := w.Header().Get("Access-Control-Allow-Origin"); got != "*" {
+		t.Fatalf("allow-origin = %q, want *", got)
+	}
+	if got := w.Header().Get("Access-Control-Expose-Headers"); got == "" {
+		t.Fatal("expected Access-Control-Expose-Headers header")
+	}
+}

@@ -34,6 +34,7 @@ func NewRouter(log *slog.Logger, timeout time.Duration, auth *AuthHandlers) http
 	handler = observability.NewHTTPHandler(handler, "auth.http")
 	handler = observability.HTTPMetricsMiddleware(handler)
 	handler = methodGuard(handler)
+	handler = corsMiddleware(handler)
 	handler = middleware.Recovery(log)(handler)
 	handler = middleware.AccessLog(log)(handler)
 	handler = middleware.CorrelationID(handler)

@@ -302,13 +302,13 @@ Objetivo: garantir qualidade e regressao controlada.
 Objetivo: padronizar contrato para gateway e consumidores.
 
 ### Checklist
-- [ ] Documentar endpoints e modelos
-- [ ] Documentar erros padrao
-- [ ] Documentar exemplos de payload
-- [ ] Versionar spec
+- [x] Documentar endpoints e modelos
+- [x] Documentar erros padrao
+- [x] Documentar exemplos de payload
+- [x] Versionar spec
 
 ### Criterio de pronto
-- [ ] Spec valida e revisada
+- [x] Spec valida e revisada
 
 ---
 
