@@ -13,6 +13,11 @@ import (
 	"food_delivery_platform/shared/events"
 
 	amqp "github.com/rabbitmq/amqp091-go"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const (
@@ -162,14 +167,29 @@ func buildEventHeaders(meta contracts.EventMeta) amqp.Table {
 }
 
 func (p *RabbitAuthEventPublisher) publishWithRetry(ctx context.Context, routingKey string, msg any, headers amqp.Table) error {
+	ctx, span := otel.Tracer("auth-service.messaging").Start(ctx, "rabbitmq.publish", trace.WithSpanKind(trace.SpanKindProducer))
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.String("messaging.system", "rabbitmq"),
+		attribute.String("messaging.destination", p.exchange),
+		attribute.String("messaging.rabbitmq.routing_key", routingKey),
+		attribute.String("event.id", headerString(headers, "event_id")),
+		attribute.String("event.type", headerString(headers, "event_type")),
+	)
+
+	injectTraceparent(ctx, headers)
+
 	var lastErr error
 
 	for attempt := 1; attempt <= p.retry.MaxAttempts; attempt++ {
 		headers["attempt"] = int32(attempt)
 		err := p.publishFn(ctx, p.ch, p.exchange, routingKey, msg, headers)
 		if err == nil {
+			span.SetStatus(codes.Ok, "publish succeeded")
 			return nil
 		}
+		span.RecordError(err)
 		if p.log != nil {
 			p.log.Warn("auth event publish failed",
 				"exchange", p.exchange,
@@ -229,8 +249,48 @@ func (p *RabbitAuthEventPublisher) publishWithRetry(ctx context.Context, routing
 		}
 	}
 
+	if lastErr != nil {
+		span.SetStatus(codes.Error, lastErr.Error())
+	}
+
 	return fmt.Errorf("publish after retries: %w", lastErr)
 }
+
+func injectTraceparent(ctx context.Context, headers amqp.Table) {
+	if headerString(headers, "traceparent") != "" {
+		return
+	}
+	carrier := amqpHeaderCarrier(headers)
+	otel.GetTextMapPropagator().Inject(ctx, carrier)
+}
+
+type amqpHeaderCarrier amqp.Table
+
+func (c amqpHeaderCarrier) Get(key string) string {
+	v, ok := c[key]
+	if !ok || v == nil {
+		return ""
+	}
+	s, ok := v.(string)
+	if ok {
+		return s
+	}
+	return fmt.Sprint(v)
+}
+
+func (c amqpHeaderCarrier) Set(key, value string) {
+	c[key] = value
+}
+
+func (c amqpHeaderCarrier) Keys() []string {
+	keys := make([]string, 0, len(c))
+	for k := range c {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
+var _ propagation.TextMapCarrier = amqpHeaderCarrier{}
 
 func headerString(headers amqp.Table, key string) string {
 	v, ok := headers[key]

@@ -248,23 +248,23 @@ Objetivo: publicar eventos de autenticacao para integracao com outros servicos.
 Objetivo: instrumentar servico para operacao real.
 
 ### Logs
-- [ ] Log estruturado por endpoint
-- [ ] Campos obrigatorios: service, request_id, correlation_id, status, duration
+- [x] Log estruturado por endpoint
+- [x] Campos obrigatorios: service, request_id, correlation_id, status, duration
 
 ### Metricas
-- [ ] auth_login_attempts_total
-- [ ] auth_login_failures_total
-- [ ] auth_token_refresh_total
-- [ ] http_request_duration_seconds
+- [x] auth_login_attempts_total
+- [x] auth_login_failures_total
+- [x] auth_token_refresh_total
+- [x] http_request_duration_seconds
 
 ### Tracing
-- [ ] Instrumentacao HTTP server
-- [ ] Instrumentacao Mongo operations
-- [ ] Instrumentacao publish de eventos
+- [x] Instrumentacao HTTP server
+- [x] Instrumentacao Mongo operations
+- [x] Instrumentacao publish de eventos
 
 ### Criterio de pronto
-- [ ] Dados observaveis no ambiente local
-- [ ] Erros e latencia rastreaveis ponta a ponta
+- [x] Dados observaveis no ambiente local
+- [x] Erros e latencia rastreaveis ponta a ponta
 
 ---
 

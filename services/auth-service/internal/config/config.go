@@ -10,6 +10,7 @@ import (
 
 type Config struct {
 	ServiceName    string
+	ServiceVersion string
 	HTTPPort       string
 	LogLevel       string
 	RequestTimeout time.Duration
@@ -21,6 +22,7 @@ type Config struct {
 	JWTIssuer      string
 	JWTAccessTTL   time.Duration
 	JWTRefreshTTL  time.Duration
+	OTelEnabled    bool
 }
 
 func Load() Config {
@@ -28,17 +30,19 @@ func Load() Config {
 	_ = godotenv.Load(".env")
 
 	cfg := Config{
-		ServiceName:   getEnv("SERVICE_NAME", "auth-service"),
-		HTTPPort:      getEnv("HTTP_PORT", "8081"),
-		LogLevel:      getEnv("LOG_LEVEL", "info"),
-		MongoURI:      getEnv("MONGO_URI", ""),
-		MongoDBName:   getEnv("MONGO_DB_NAME", "auth_db"),
-		RabbitMQURL:   getEnv("RABBITMQ_URL", ""),
-		BcryptCost:    getEnvInt("BCRYPT_COST", 12),
-		JWTSecret:     getEnv("JWT_SECRET", ""),
-		JWTIssuer:     getEnv("JWT_ISSUER", "auth-service"),
-		JWTAccessTTL:  time.Duration(getEnvInt("JWT_ACCESS_TTL", 15)) * time.Minute,
-		JWTRefreshTTL: time.Duration(getEnvInt("JWT_REFRESH_TTL", 60)) * time.Minute,
+		ServiceName:    getEnv("SERVICE_NAME", "auth-service"),
+		ServiceVersion: getEnv("SERVICE_VERSION", "dev"),
+		HTTPPort:       getEnv("HTTP_PORT", "8081"),
+		LogLevel:       getEnv("LOG_LEVEL", "info"),
+		MongoURI:       getEnv("MONGO_URI", ""),
+		MongoDBName:    getEnv("MONGO_DB_NAME", "auth_db"),
+		RabbitMQURL:    getEnv("RABBITMQ_URL", ""),
+		BcryptCost:     getEnvInt("BCRYPT_COST", 12),
+		JWTSecret:      getEnv("JWT_SECRET", ""),
+		JWTIssuer:      getEnv("JWT_ISSUER", "auth-service"),
+		JWTAccessTTL:   time.Duration(getEnvInt("JWT_ACCESS_TTL", 15)) * time.Minute,
+		JWTRefreshTTL:  time.Duration(getEnvInt("JWT_REFRESH_TTL", 60)) * time.Minute,
+		OTelEnabled:    getEnvBool("OTEL_ENABLED", false),
 	}
 	// Faixa valida do bcrypt: 4..31. Em valor invalido, usa fallback seguro.
 	if cfg.BcryptCost < 4 || cfg.BcryptCost > 31 {
@@ -84,6 +88,18 @@ func getEnvInt(key string, fallback int) int {
 		return fallback
 	}
 	return n
+}
+
+func getEnvBool(key string, fallback bool) bool {
+	v := os.Getenv(key)
+	if v == "" {
+		return fallback
+	}
+	b, err := strconv.ParseBool(v)
+	if err != nil {
+		return fallback
+	}
+	return b
 }
 
 func getEnvDuration(key string, fallback time.Duration) time.Duration {

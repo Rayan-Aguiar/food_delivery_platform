@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"food_delivery_platform/services/auth-service/internal/application"
+	"food_delivery_platform/services/auth-service/internal/observability"
 	apperrors "food_delivery_platform/shared/errors"
 	"food_delivery_platform/shared/middleware"
 	"food_delivery_platform/shared/utils"
@@ -124,9 +125,11 @@ func (h *AuthHandlers) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		writeAppError(w, r, apperrors.Internal("login use case is not configured", nil))
 		return
 	}
+	observability.IncLoginAttempt()
 
 	var req loginRequest
 	if err := decodeJSON(r, &req); err != nil {
+		observability.IncLoginFailure()
 		writeAppError(w, r, apperrors.InvalidArgument("invalid request body", err))
 		return
 	}
@@ -142,6 +145,7 @@ func (h *AuthHandlers) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		IdempotencyKey: r.Header.Get("Idempotency-Key"),
 	})
 	if err != nil {
+		observability.IncLoginFailure()
 		writeAppError(w, r, err)
 		return
 	}
@@ -160,6 +164,7 @@ func (h *AuthHandlers) RefreshHandler(w http.ResponseWriter, r *http.Request) {
 		writeAppError(w, r, apperrors.Internal("refresh use case is not configured", nil))
 		return
 	}
+	observability.IncTokenRefresh()
 
 	var req refreshRequest
 	if err := decodeJSON(r, &req); err != nil {

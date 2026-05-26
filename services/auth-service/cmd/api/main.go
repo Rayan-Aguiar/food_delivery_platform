@@ -20,6 +20,7 @@ import (
 	mongorepo "food_delivery_platform/services/auth-service/internal/infrastructure/mongo"
 	"food_delivery_platform/services/auth-service/internal/infrastructure/security"
 	"food_delivery_platform/services/auth-service/internal/infrastructure/system"
+	"food_delivery_platform/services/auth-service/internal/observability"
 	"food_delivery_platform/shared/broker"
 	"food_delivery_platform/shared/logger"
 
@@ -35,7 +36,25 @@ func main() {
 	startupCtx, startupCancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer startupCancel()
 
-	client, db, err := connectMongo(startupCtx, cfg.MongoURI, cfg.MongoDBName)
+	tracingShutdown, err := observability.SetupTracing(startupCtx, observability.TracingConfig{
+		Enabled:        cfg.OTelEnabled,
+		ServiceName:    cfg.ServiceName,
+		ServiceVersion: cfg.ServiceVersion,
+		Environment:    os.Getenv("ENVIRONMENT"),
+	})
+	if err != nil {
+		log.Error("failed to initialize tracing", "error", err.Error())
+		os.Exit(1)
+	}
+	defer func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := tracingShutdown(ctx); err != nil {
+			log.Error("failed to shutdown tracing", "error", err.Error())
+		}
+	}()
+
+	client, db, err := connectMongo(startupCtx, cfg.MongoURI, cfg.MongoDBName, cfg.OTelEnabled)
 	if err != nil {
 		log.Error("failed to connect mongo", "error", err.Error())
 		os.Exit(1)
@@ -147,7 +166,7 @@ func waitForShutdown(log *slog.Logger, server *http.Server, mongoClient *mdriver
 	log.Info("server stopped")
 }
 
-func connectMongo(ctx context.Context, uri, dbName string) (*mdriver.Client, *mdriver.Database, error) {
+func connectMongo(ctx context.Context, uri, dbName string, withTelemetry bool) (*mdriver.Client, *mdriver.Database, error) {
 	if uri == "" {
 		return nil, nil, errors.New("MONGO_URI is required")
 	}
@@ -155,7 +174,12 @@ func connectMongo(ctx context.Context, uri, dbName string) (*mdriver.Client, *md
 		return nil, nil, errors.New("MONGO_DB_NAME is required")
 	}
 
-	client, err := mdriver.Connect(ctx, options.Client().ApplyURI(uri))
+	clientOpts := options.Client().ApplyURI(uri)
+	if withTelemetry {
+		clientOpts.SetMonitor(observability.NewMongoMonitor())
+	}
+
+	client, err := mdriver.Connect(ctx, clientOpts)
 	if err != nil {
 		return nil, nil, fmt.Errorf("mongo connect: %w", err)
 	}

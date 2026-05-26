@@ -31,6 +31,7 @@ func AccessLog(log *slog.Logger) func(http.Handler) http.Handler {
 				"method", r.Method,
 				"path", r.URL.Path,
 				"status", rw.statusCode,
+				"duration", time.Since(start).String(),
 				"duration_ms", time.Since(start).Milliseconds(),
 				"request_id", reqID,
 				"correlation_id", correlationID,

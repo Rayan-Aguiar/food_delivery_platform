@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"food_delivery_platform/services/auth-service/internal/observability"
 	"food_delivery_platform/shared/middleware"
 
 	"golang.org/x/time/rate"
@@ -16,6 +17,7 @@ func NewRouter(log *slog.Logger, timeout time.Duration, auth *AuthHandlers) http
 	mux.HandleFunc("GET /health/live", LiveHandler)
 	mux.HandleFunc("GET /health/ready", ReadyHandler)
 	mux.HandleFunc("GET /auth/health", AuthHealthHandler)
+	mux.Handle("GET /metrics", observability.PrometheusHandler())
 	if auth != nil {
 		// 5 requisições por minuto por IP, burst de 5 — proteção contra brute-force
 		rl := newIPRateLimiter(rate.Every(12*time.Second), 5)
@@ -29,6 +31,8 @@ func NewRouter(log *slog.Logger, timeout time.Duration, auth *AuthHandlers) http
 	mux.HandleFunc("/", NotFoundHandler)
 
 	var handler http.Handler = mux
+	handler = observability.NewHTTPHandler(handler, "auth.http")
+	handler = observability.HTTPMetricsMiddleware(handler)
 	handler = methodGuard(handler)
 	handler = middleware.Recovery(log)(handler)
 	handler = middleware.AccessLog(log)(handler)
