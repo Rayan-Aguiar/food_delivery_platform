@@ -52,7 +52,7 @@ Este repositorio representa uma **jornada técnica completa**, deixando claro o 
 | Camada | Tecnologias |
 |---|---|
 | Backend | Go |
-| Banco de Dados | MongoDB |
+| Banco de Dados | MongoDB + PostgreSQL (por dominio) |
 | Mensageria | RabbitMQ |
 | Cache Distribuido | Redis |
 | API | REST (gRPC planejado) |
@@ -86,8 +86,8 @@ flowchart LR
     A --> MA[(MongoDB Auth)]
     U --> MU[(MongoDB User)]
     R --> MR[(MongoDB Restaurant)]
-    O --> MO[(MongoDB Order)]
-    P --> MP[(MongoDB Payment)]
+    O --> PO[(PostgreSQL Order)]
+    P --> PP[(PostgreSQL Payment)]
     D --> MD[(MongoDB Delivery)]
 
     S[(Redis)] --- O
@@ -214,6 +214,27 @@ flowchart LR
 | Delivery Service | Esteira de entrega e tracking | Planejado |
 | Notification Service | Notificacoes por evento | Planejado |
 | API Gateway | Entrada unica, auth e roteamento | Em estruturacao |
+
+---
+
+## Estrategia de Persistencia (decisao atual)
+
+Depois de avaliar os trade-offs da arquitetura e buscando aproximar o projeto de um cenario real, cheguei a conclusao de que nao vale usar MongoDB para tudo.
+
+Minha decisao atual:
+
+- MongoDB em dominios com schema mais flexivel e evolucao rapida: `auth-service`, `user-service`, `restaurant-service`, `delivery-service` e `notification-service`.
+- PostgreSQL em dominios com necessidade maior de consistencia transacional e auditoria: `order-service` e `payment-service`.
+
+Motivos da decisao:
+
+- `payment-service` lida com operacoes financeiras e exige maior rigor transacional e rastreabilidade.
+- `order-service` possui transicoes de estado criticas do ciclo de pedido e se beneficia de integridade relacional.
+- Dominios de perfil, catalogo e notificacao seguem adequados ao modelo documental do MongoDB.
+
+Observacao importante:
+
+- O projeto continua incremental e educacional. Esta decisao melhora aderencia a praticas de mercado sem perder o foco de aprendizado.
 
 ---
 

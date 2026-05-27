@@ -10,13 +10,13 @@
 
 ## 2. Ordem recomendada de desenvolvimento
 1. Fundacao compartilhada (`shared/contracts`, `shared/events`, `shared/logger`, `shared/middleware`, `shared/broker`).
-2. auth-service.
+2. auth-service (MongoDB).
 3. api-gateway (com auth pronto).
-4. restaurant-service.
-5. order-service (happy path sem compensacoes completas).
-6. payment-service + integracao de evento.
-7. delivery-service + integracao de evento.
-8. notification-service.
+4. restaurant-service (MongoDB).
+5. order-service (PostgreSQL, happy path sem compensacoes completas).
+6. payment-service (PostgreSQL) + integracao de evento.
+7. delivery-service (MongoDB) + integracao de evento.
+8. notification-service (MongoDB).
 9. compensacoes avancadas, estorno e hardening de resiliencia.
 10. observabilidade e testes E2E finais.
 
@@ -56,3 +56,25 @@
 - Banco por servico:
   - Beneficio: autonomia e escalabilidade.
   - Trade-off: consistencia eventual e duplicacao controlada de dados.
+
+## 7. Estrategia de persistencia por dominio (decisao consolidada)
+Depois da analise da arquitetura e dos requisitos de negocio, cheguei a conclusao de que o projeto deve adotar persistencia poliglota.
+
+Distribuicao definida:
+- `auth-service`: MongoDB
+- `user-service`: MongoDB
+- `restaurant-service`: MongoDB
+- `delivery-service`: MongoDB
+- `notification-service`: MongoDB
+- `order-service`: PostgreSQL
+- `payment-service`: PostgreSQL
+
+Justificativa principal:
+- `payment-service` exige consistencia transacional forte, auditoria e confiabilidade de escrita para operacoes financeiras.
+- `order-service` possui transicoes criticas de estado do pedido e regras de integridade que se beneficiam de modelo relacional.
+- Servicos orientados a dados mais documentais e flexiveis continuam em MongoDB para evolucao rapida.
+
+Impacto no plano de execucao:
+- Na implementacao de `order-service` e `payment-service`, incluir configuracao e camada de persistencia para PostgreSQL desde o inicio.
+- Nos demais servicos, manter MongoDB conforme planejamento original.
+
