@@ -8,11 +8,14 @@ import (
 	"food_delivery_platform/shared/middleware"
 )
 
-func NewRouter(log *slog.Logger, timeout time.Duration) http.Handler {
+func NewRouter(log *slog.Logger, timeout time.Duration, authProxy http.Handler) http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /health/live", LiveHandler)
 	mux.HandleFunc("GET /health/ready", ReadyHandler)
+
+	RegisterAuthRoutes(mux, authProxy)
+
 	mux.HandleFunc("/", notFoundHandler)
 
 	var handler http.Handler = mux

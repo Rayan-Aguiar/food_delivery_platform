@@ -59,20 +59,23 @@ Entregar o primeiro valor real: gateway encaminhando rotas de auth para o auth-s
 Voce vai aprender:
 Como um reverse proxy funciona na pratica e como o gateway desacopla cliente de servicos internos.
 
+Status atual:
+- [x] Concluida
+
 ### Checklist
-- [ ] Definir upstream AUTH_SERVICE_URL.
-- [ ] Mapear rotas publicas de auth:
-  - [ ] POST /auth/register
-  - [ ] POST /auth/login
-  - [ ] POST /auth/refresh
-- [ ] Implementar proxy HTTP para auth com preservacao de metodo, path e body.
-- [ ] Propagar headers de contexto (request_id e correlation_id).
-- [ ] Tratar erros de upstream com resposta padronizada.
+- [x] Definir upstream AUTH_SERVICE_URL.
+- [x] Mapear rotas publicas de auth:
+  - [x] POST /auth/register
+  - [x] POST /auth/login
+  - [x] POST /auth/refresh
+- [x] Implementar proxy HTTP para auth com preservacao de metodo, path e body.
+- [x] Propagar headers de contexto (request_id e correlation_id).
+- [x] Tratar erros de upstream com resposta padronizada.
 
 ### Criterio de pronto
-- [ ] Chamadas para /auth/* funcionam via gateway.
-- [ ] Sem quebra de contrato esperado pelo cliente.
-- [ ] Falhas de upstream retornam erro consistente.
+- [x] Chamadas para /auth/* funcionam via gateway.
+- [x] Sem quebra de contrato esperado pelo cliente.
+- [x] Falhas de upstream retornam erro consistente.
 
 ---
 
