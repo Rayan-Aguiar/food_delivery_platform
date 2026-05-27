@@ -34,18 +34,21 @@ Preparar base executavel do servico com configuracao, bootstrap HTTP e health ch
 Voce vai aprender:
 Como iniciar um servico de borda em Go com configuracao por ambiente e ciclo de vida limpo.
 
+Status atual:
+- [x] Concluida
+
 ### Checklist
-- [ ] Criar modulo Go do api-gateway.
-- [ ] Definir estrutura inicial em cmd e internal.
-- [ ] Criar carregamento de envs obrigatorias.
-- [ ] Subir servidor HTTP com timeout global.
-- [ ] Expor /health/live e /health/ready.
-- [ ] Integrar logger compartilhado e middleware base (request_id e correlation_id).
+- [x] Criar modulo Go do api-gateway.
+- [x] Definir estrutura inicial em cmd e internal.
+- [x] Criar carregamento de envs obrigatorias.
+- [x] Subir servidor HTTP com timeout global.
+- [x] Expor /health/live e /health/ready.
+- [x] Integrar logger compartilhado e middleware base (request_id e correlation_id).
 
 ### Criterio de pronto
-- [ ] Servico sobe localmente sem dependencias externas.
-- [ ] Health endpoints respondem 200.
-- [ ] Logs de request contem request_id e correlation_id.
+- [x] Servico sobe localmente sem dependencias externas.
+- [x] Health endpoints respondem 200.
+- [x] Logs de request contem request_id e correlation_id.
 
 ---
 
