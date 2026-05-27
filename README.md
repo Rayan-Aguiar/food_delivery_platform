@@ -213,6 +213,7 @@ flowchart LR
 | Payment Service | Processamento e status de pagamento | Planejado |
 | Delivery Service | Esteira de entrega e tracking | Planejado |
 | Notification Service | Notificacoes por evento | Planejado |
+| Analytics/Reporting Service | Projecoes e relatorios consolidados por evento | Opcional (pos-MVP) |
 | API Gateway | Entrada unica, auth e roteamento | Em estruturacao |
 
 ---
@@ -235,6 +236,18 @@ Motivos da decisao:
 Observacao importante:
 
 - O projeto continua incremental e educacional. Esta decisao melhora aderencia a praticas de mercado sem perder o foco de aprendizado.
+
+---
+
+## Escopo Opcional (pos-MVP)
+
+Para aprofundar aprendizado em bancos distribuidos e persistencia heterogenea, existe a opcao de adicionar um `analytics-reporting-service` no futuro.
+
+Diretriz proposta:
+
+- O servico de relatorios deve consumir eventos de dominio (RabbitMQ) e manter banco proprio de leitura.
+- Evitar consultas diretas em tempo real nos bancos de outros servicos para reduzir acoplamento.
+- Implementacao opcional e recomendada apenas apos concluir o escopo principal do projeto.
 
 ---
 

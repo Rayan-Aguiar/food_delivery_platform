@@ -1,7 +1,7 @@
 # Platform Blueprint - Food Delivery
 
 ## 1. Objetivo arquitetural
-Construir uma plataforma de delivery distribuida, desacoplada e orientada a eventos com microsservicos em Go, banco isolado por servico (MongoDB), mensageria RabbitMQ, observabilidade ponta a ponta e padrao Saga para consistencia eventual.
+Construir uma plataforma de delivery distribuida, desacoplada e orientada a eventos com microsservicos em Go, banco isolado por servico (estrategia poliglota por dominio), mensageria RabbitMQ, observabilidade ponta a ponta e padrao Saga para consistencia eventual.
 
 ## 2. Premissas obrigatorias
 - Cada servico e independente: `go.mod`, Dockerfile, configs e banco proprios.
@@ -19,6 +19,7 @@ Construir uma plataforma de delivery distribuida, desacoplada e orientada a even
 - delivery-service: alocacao de entregador e ciclo de entrega.
 - notification-service: envio de notificacoes por canal.
 - api-gateway: borda de entrada, auth pass-through, rate limit, roteamento.
+- analytics-reporting-service (opcional): projecoes e relatorios consolidados a partir de eventos de negocio.
 
 ## 4. Contrato padrao de evento
 Todos os eventos devem seguir envelope comum:
@@ -173,9 +174,26 @@ Mitigacoes:
 6. delivery-service e integracao `payment.approved` -> `delivery.*`.
 7. notification-service para eventos de negocio.
 8. observabilidade completa, testes E2E e hardening de resiliencia.
+9. analytics-reporting-service (opcional, pos-MVP).
 
 ## 15. Estrategia incremental
 - Iteracao 1: happy path (pedido pago e entregue).
 - Iteracao 2: compensacoes da saga (falha de pagamento e falha de entrega).
 - Iteracao 3: idempotencia, retry avancado, DLQ operacional.
 - Iteracao 4: performance, seguranca avancada e readiness para producao.
+
+## 16. Trilha opcional (pos-MVP): analytics e relatorios
+Objetivo:
+- Aprender consolidacao de dados entre dominios sem acoplamento direto aos bancos dos microsservicos.
+
+Diretriz arquitetural:
+- Consumir eventos de order/payment/delivery via RabbitMQ e manter banco proprio de leitura.
+- Evitar consultas cross-service em tempo real aos bancos de dominio.
+
+Escopo inicial sugerido (opcional):
+- Receita diaria.
+- Taxa de aprovacao de pagamento.
+- Lead time do pedido (criado -> pago -> entregue).
+
+Nota de escopo:
+- Implementar apenas apos conclusao do escopo principal para nao comprometer prazo.

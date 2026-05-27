@@ -7,6 +7,7 @@
 - `delivery-service` depende de evento `delivery.requested.v1` (emitido pelo order-service apos aprovacao financeira).
 - `notification-service` depende dos eventos de order/payment/delivery.
 - `user-service` pode depender de evento `user.auth.registered.v1` e opcionalmente `order.status.changed.v1`.
+- `analytics-reporting-service` (opcional) depende de eventos de order/payment/delivery para montar projecoes de relatorios.
 
 ## 2. Ordem recomendada de desenvolvimento
 1. Fundacao compartilhada (`shared/contracts`, `shared/events`, `shared/logger`, `shared/middleware`, `shared/broker`).
@@ -19,6 +20,7 @@
 8. notification-service (MongoDB).
 9. compensacoes avancadas, estorno e hardening de resiliencia.
 10. observabilidade e testes E2E finais.
+11. analytics-reporting-service (opcional, pos-MVP).
 
 ## 3. Marco por iteracao
 - Iteracao A: autenticacao + catalogo + gateway.
@@ -77,4 +79,20 @@ Justificativa principal:
 Impacto no plano de execucao:
 - Na implementacao de `order-service` e `payment-service`, incluir configuracao e camada de persistencia para PostgreSQL desde o inicio.
 - Nos demais servicos, manter MongoDB conforme planejamento original.
+
+## 8. Trilha opcional (pos-MVP): analytics-reporting-service
+Objetivo:
+- Consolidar dados de negocio para relatorios sem acoplamento direto aos bancos dos microsservicos de dominio.
+
+Diretriz arquitetural:
+- Consumir eventos do RabbitMQ e manter banco proprio de leitura/projecao.
+- Evitar consultas cross-service em tempo real para reduzir acoplamento e fragilidade operacional.
+
+Escopo sugerido (opcional):
+- Relatorio de receita diaria.
+- Taxa de aprovacao de pagamento.
+- Lead time de pedido (criado -> pago -> entregue).
+
+Nota de escopo:
+- Esta trilha e opcional e deve ser iniciada apenas apos entrega do escopo principal, para evitar aumento de prazo do projeto.
 
