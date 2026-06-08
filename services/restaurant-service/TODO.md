@@ -32,18 +32,21 @@ Criar base executavel do servico com bootstrap HTTP, configuracao por ambiente e
 Voce vai aprender:
 Como iniciar um novo microsservico padronizado no monorepo com ciclo de vida limpo.
 
+Status atual:
+- [x] Concluida
+
 ### Checklist
-- [ ] Criar modulo Go do restaurant-service.
-- [ ] Definir estrutura inicial em cmd e internal.
-- [ ] Criar configuracao por env (`HTTP_PORT`, `MONGO_URI`, `MONGO_DB_NAME`).
-- [ ] Subir servidor HTTP com timeout global.
-- [ ] Expor `/health/live` e `/health/ready`.
-- [ ] Integrar logger e middlewares base (request_id, correlation_id, recovery, access log).
+- [x] Criar modulo Go do restaurant-service.
+- [x] Definir estrutura inicial em cmd e internal.
+- [x] Criar configuracao por env (`HTTP_PORT`, `MONGO_URI`, `MONGO_DB_NAME`).
+- [x] Subir servidor HTTP com timeout global.
+- [x] Expor `/health/live` e `/health/ready`.
+- [x] Integrar logger e middlewares base (request_id, correlation_id, recovery, access log).
 
 ### Criterio de pronto
-- [ ] Servico sobe localmente.
-- [ ] Health endpoints respondem 200.
-- [ ] Logs de request com request_id e correlation_id.
+- [x] Servico sobe localmente.
+- [x] Health endpoints respondem 200.
+- [x] Logs de request com request_id e correlation_id.
 
 ---
 
