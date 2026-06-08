@@ -57,16 +57,20 @@ Modelar entidades e regras centrais de restaurante e menu sem acoplamento com in
 Voce vai aprender:
 Como traduzir regras de negocio em entidades, value objects e contratos de repositorio.
 
+Status atual:
+- [x] Concluida
+
 ### Checklist
-- [ ] Modelar `Restaurant` (id, nome, status, taxa de entrega).
-- [ ] Modelar `MenuItem` (id, restaurant_id, nome, preco, categoria, available).
-- [ ] Definir estados de restaurante (ativo/inativo) e invariantes.
-- [ ] Definir interfaces `RestaurantRepository` e `MenuRepository`.
-- [ ] Definir erros de dominio para item indisponivel e restaurante inativo.
+- [x] Modelar `Restaurant` (id, nome, endereco, telefone, status, taxa de entrega `float64`).
+- [x] Modelar `MenuItem` (id, restaurant_id, nome, preco, categoria, available).
+- [x] Restringir categorias do menu para: `pizzaria`, `hamburgueria`, `japones`, `comida brasileira`, `sorveteria`.
+- [x] Definir estados de restaurante (ativo/inativo) e invariantes.
+- [x] Definir interfaces `RestaurantRepository` e `MenuRepository`.
+- [x] Definir erros de dominio para item indisponivel e restaurante inativo.
 
 ### Criterio de pronto
-- [ ] Dominio compila sem dependencia de Mongo/HTTP.
-- [ ] Regras de dominio cobertas por testes unitarios.
+- [x] Dominio compila sem dependencia de Mongo/HTTP.
+- [x] Regras de dominio cobertas por testes unitarios.
 
 ---
 
