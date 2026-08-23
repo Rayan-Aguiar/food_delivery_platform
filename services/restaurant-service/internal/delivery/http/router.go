@@ -6,25 +6,31 @@ import (
 	"time"
 
 	"food_delivery_platform/shared/middleware"
+
+	"golang.org/x/time/rate"
 )
 
-func NewRouter(log *slog.Logger, timeout time.Duration, serviceName string, restaurants *RestaurantHandlers) http.Handler {
+func NewRouter(log *slog.Logger, timeout time.Duration, serviceName string, restaurants *RestaurantHandlers, tokens tokenValidator) http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /health/live", LiveHandler)
 	mux.HandleFunc("GET /health/ready", ReadyHandler(serviceName))
 
 	if restaurants != nil {
-		mux.HandleFunc("GET /restaurants", restaurants.ListRestaurantsHandler)
-		mux.HandleFunc("GET /restaurants/{id}", restaurants.GetRestaurantDetailsHandler)
-		mux.HandleFunc("GET /restaurants/{id}/menu", restaurants.ListRestaurantMenuHandler)
+		// Leitura publica: rate limit basico por IP contra burst/scraping.
+		publicRL := newIPRateLimiter(rate.Limit(10), 30)
+		mux.Handle("GET /restaurants", publicRL.Middleware(http.HandlerFunc(restaurants.ListRestaurantsHandler)))
+		mux.Handle("GET /restaurants/{id}", publicRL.Middleware(http.HandlerFunc(restaurants.GetRestaurantDetailsHandler)))
+		mux.Handle("GET /restaurants/{id}/menu", publicRL.Middleware(http.HandlerFunc(restaurants.ListRestaurantMenuHandler)))
 
-		// Rotas administrativas: protecao por JWT ainda nao aplicada (ver Fase 7).
-		mux.HandleFunc("POST /restaurants", restaurants.CreateRestaurantHandler)
-		mux.HandleFunc("POST /restaurants/{id}/menu/items", restaurants.CreateMenuItemHandler)
-		mux.HandleFunc("PATCH /restaurants/{id}/menu/items/{itemId}", restaurants.UpdateMenuItemHandler)
+		// Rotas administrativas: exigem Bearer token valido emitido pelo auth-service.
+		adminAuth := JWTAuth(tokens)
+		mux.Handle("POST /restaurants", adminAuth(http.HandlerFunc(restaurants.CreateRestaurantHandler)))
+		mux.Handle("POST /restaurants/{id}/menu/items", adminAuth(http.HandlerFunc(restaurants.CreateMenuItemHandler)))
+		mux.Handle("PATCH /restaurants/{id}/menu/items/{itemId}", adminAuth(http.HandlerFunc(restaurants.UpdateMenuItemHandler)))
 
-		// Rota interna consumida pelo order-service (ver Fase 7 para restricao de acesso).
+		// Rota interna consumida pelo order-service: autenticacao servico-a-servico
+		// (fora do escopo de JWT de usuario) fica para uma fase futura.
 		mux.HandleFunc("POST /restaurants/{id}/menu/validate", restaurants.ValidateMenuItemsHandler)
 	}
 

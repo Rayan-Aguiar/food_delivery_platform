@@ -16,6 +16,8 @@ type Config struct {
 	RequestTimeout time.Duration
 	MongoURI       string
 	MongoDBName    string
+	JWTSecret      string
+	JWTIssuer      string
 }
 
 func Load() Config {
@@ -31,6 +33,10 @@ func Load() Config {
 		RequestTimeout: time.Duration(timeoutSeconds) * time.Second,
 		MongoURI:       getEnv("MONGO_URI", ""),
 		MongoDBName:    getEnv("MONGO_DB_NAME", "restaurant_db"),
+		JWTSecret:      getEnv("JWT_SECRET", ""),
+		// auth-service e' quem emite os tokens que este servico valida; o issuer
+		// esperado precisa bater com o JWT_ISSUER configurado la.
+		JWTIssuer: getEnv("JWT_ISSUER", "auth-service"),
 	}
 }
 

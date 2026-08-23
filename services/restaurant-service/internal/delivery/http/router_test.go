@@ -1,7 +1,9 @@
 package httpdelivery
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"log/slog"
 	"net/http"
@@ -18,7 +20,12 @@ var silentLogger = slog.New(slog.NewTextHandler(io.Discard, nil))
 
 func newTestRouter() http.Handler {
 	restaurants := NewRestaurantHandlers(&fakeListRestaurants{}, &fakeGetRestaurantDetails{}, &fakeListRestaurantMenu{}, &fakeCreateRestaurant{}, &fakeCreateMenuItem{}, &fakeUpdateMenuItem{}, &fakeValidateMenuItems{})
-	return NewRouter(silentLogger, 5*time.Second, "restaurant-service", restaurants)
+	return NewRouter(silentLogger, 5*time.Second, "restaurant-service", restaurants, &fakeTokenValidator{})
+}
+
+func withBearerToken(r *http.Request) *http.Request {
+	r.Header.Set("Authorization", "Bearer valid-token")
+	return r
 }
 
 func TestRouter_ListRestaurants(t *testing.T) {
@@ -53,7 +60,7 @@ func TestRouter_ListRestaurantMenu(t *testing.T) {
 
 func TestRouter_CreateRestaurant(t *testing.T) {
 	body := `{"name":"Pizza Place","address":"Main St 123","phone_number":"+5511999999999","delivery_fee":5.0}`
-	r := httptest.NewRequest(http.MethodPost, "/restaurants", strings.NewReader(body))
+	r := withBearerToken(httptest.NewRequest(http.MethodPost, "/restaurants", strings.NewReader(body)))
 	w := httptest.NewRecorder()
 	newTestRouter().ServeHTTP(w, r)
 
@@ -64,7 +71,7 @@ func TestRouter_CreateRestaurant(t *testing.T) {
 
 func TestRouter_CreateMenuItem(t *testing.T) {
 	body := `{"name":"Margherita","price":39.9,"category":"pizzaria"}`
-	r := httptest.NewRequest(http.MethodPost, "/restaurants/rest-1/menu/items", strings.NewReader(body))
+	r := withBearerToken(httptest.NewRequest(http.MethodPost, "/restaurants/rest-1/menu/items", strings.NewReader(body)))
 	w := httptest.NewRecorder()
 	newTestRouter().ServeHTTP(w, r)
 
@@ -75,12 +82,63 @@ func TestRouter_CreateMenuItem(t *testing.T) {
 
 func TestRouter_UpdateMenuItem(t *testing.T) {
 	body := `{"available":false}`
-	r := httptest.NewRequest(http.MethodPatch, "/restaurants/rest-1/menu/items/item-1", strings.NewReader(body))
+	r := withBearerToken(httptest.NewRequest(http.MethodPatch, "/restaurants/rest-1/menu/items/item-1", strings.NewReader(body)))
 	w := httptest.NewRecorder()
 	newTestRouter().ServeHTTP(w, r)
 
 	if w.Code != http.StatusOK {
 		t.Fatalf("status = %d, want 200; body: %s", w.Code, w.Body)
+	}
+}
+
+// ── JWT auth nas rotas administrativas ──────────────────────────────────────────
+
+func TestRouter_AdminRoutes_RejectMissingToken(t *testing.T) {
+	tests := []struct {
+		method string
+		path   string
+		body   string
+	}{
+		{http.MethodPost, "/restaurants", `{"name":"x","address":"y","phone_number":"z","delivery_fee":1}`},
+		{http.MethodPost, "/restaurants/rest-1/menu/items", `{"name":"x","price":1,"category":"pizzaria"}`},
+		{http.MethodPatch, "/restaurants/rest-1/menu/items/item-1", `{"available":false}`},
+	}
+
+	router := newTestRouter()
+	for _, tt := range tests {
+		t.Run(tt.method+" "+tt.path, func(t *testing.T) {
+			r := httptest.NewRequest(tt.method, tt.path, strings.NewReader(tt.body))
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, r)
+
+			if w.Code != http.StatusUnauthorized {
+				t.Fatalf("status = %d, want 401 for %s %s; body: %s", w.Code, tt.method, tt.path, w.Body)
+			}
+			var resp contracts.ErrorResponse
+			if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+				t.Fatalf("decode: %v", err)
+			}
+			if resp.Code != apperrors.CodeUnauthorized {
+				t.Errorf("code = %q, want %q", resp.Code, apperrors.CodeUnauthorized)
+			}
+		})
+	}
+}
+
+func TestRouter_AdminRoutes_RejectInvalidToken(t *testing.T) {
+	r := httptest.NewRequest(http.MethodPost, "/restaurants", strings.NewReader(`{"name":"x","address":"y","phone_number":"z","delivery_fee":1}`))
+	r.Header.Set("Authorization", "Bearer not-a-real-token")
+	w := httptest.NewRecorder()
+
+	restaurants := NewRestaurantHandlers(&fakeListRestaurants{}, &fakeGetRestaurantDetails{}, &fakeListRestaurantMenu{}, &fakeCreateRestaurant{}, &fakeCreateMenuItem{}, &fakeUpdateMenuItem{}, &fakeValidateMenuItems{})
+	validator := &fakeTokenValidator{fn: func(_ context.Context, _ string) (string, error) {
+		return "", errors.New("invalid signature")
+	}}
+	router := NewRouter(silentLogger, 5*time.Second, "restaurant-service", restaurants, validator)
+	router.ServeHTTP(w, r)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("status = %d, want 401; body: %s", w.Code, w.Body)
 	}
 }
 
@@ -96,7 +154,7 @@ func TestRouter_ValidateMenuItems(t *testing.T) {
 }
 
 func TestRouter_NilRestaurantHandlers_HealthStillWorks(t *testing.T) {
-	handler := NewRouter(silentLogger, 5*time.Second, "restaurant-service", nil)
+	handler := NewRouter(silentLogger, 5*time.Second, "restaurant-service", nil, nil)
 
 	r := httptest.NewRequest(http.MethodGet, "/health/live", nil)
 	w := httptest.NewRecorder()

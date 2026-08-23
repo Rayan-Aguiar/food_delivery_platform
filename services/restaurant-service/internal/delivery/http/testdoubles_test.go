@@ -91,6 +91,17 @@ func (f *fakeValidateMenuItems) Execute(ctx context.Context, input application.V
 	}, nil
 }
 
+type fakeTokenValidator struct {
+	fn func(ctx context.Context, token string) (string, error)
+}
+
+func (f *fakeTokenValidator) ValidateAccessToken(ctx context.Context, token string) (string, error) {
+	if f.fn != nil {
+		return f.fn(ctx, token)
+	}
+	return "user-1", nil
+}
+
 func mustRestaurant() entities.Restaurant {
 	r, err := entities.NewRestaurant("rest-1", "Pizza Place", "Main St 123", "+5511999999999", entities.RestaurantStatusActive, 5.0)
 	if err != nil {

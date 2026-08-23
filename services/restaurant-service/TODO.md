@@ -194,14 +194,29 @@ Aplicar controles de acesso em rotas admin e limites em consultas publicas.
 Voce vai aprender:
 Como proteger endpoints de escrita e evitar abuso em endpoints de leitura.
 
+Status atual:
+- [x] Concluida (autenticacao servico-a-servico do endpoint interno de validacao fica para uma fase futura; ver nota abaixo)
+
 ### Checklist
-- [ ] Middleware JWT em rotas admin.
-- [ ] Rate limit para consultas publicas.
-- [ ] Revisao de erros 401/403/429 padronizados.
+- [x] Middleware JWT em rotas admin.
+- [x] Rate limit para consultas publicas.
+- [x] Revisao de erros 401/403/429 padronizados.
 
 ### Criterio de pronto
-- [ ] Rotas admin protegidas corretamente.
-- [ ] Rotas publicas com protecao basica contra burst.
+- [x] Rotas admin protegidas corretamente (testes automatizados + smoke test manual: 401 sem token, 401 com token invalido, 201 com token valido assinado com o mesmo segredo).
+- [x] Rotas publicas com protecao basica contra burst (rate limit por IP, testado com token bucket).
+
+### Nota de escopo
+O contrato de claims atual do auth-service carrega apenas o subject autenticado,
+sem papel/role — por isso o middleware JWT aqui so distingue autenticado (200)
+de nao autenticado (401); nao existe um dado de autorizacao para produzir um 403
+legitimo ainda. Adicionar RBAC exigiria mudar o contrato de token do
+auth-service, o que e uma decisao cross-service fora do escopo deste servico.
+O endpoint interno `POST /restaurants/{id}/menu/validate` (Fase 6) continua sem
+protecao: ele e' consumido pelo order-service (um servico, nao um usuario
+logado), entao JWT de usuario nao se aplica — precisa de um mecanismo
+servico-a-servico proprio (API key interna, mTLS ou rede segmentada) a definir
+antes de ir para producao.
 
 ---
 

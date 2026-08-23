@@ -15,6 +15,7 @@ import (
 	"food_delivery_platform/services/restaurant-service/internal/config"
 	httpdelivery "food_delivery_platform/services/restaurant-service/internal/delivery/http"
 	mongorepo "food_delivery_platform/services/restaurant-service/internal/infrastructure/mongo"
+	"food_delivery_platform/services/restaurant-service/internal/infrastructure/security"
 	"food_delivery_platform/services/restaurant-service/internal/infrastructure/system"
 	"food_delivery_platform/shared/logger"
 
@@ -32,6 +33,12 @@ func main() {
 
 	startupCtx, startupCancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer startupCancel()
+
+	tokenValidator, err := security.NewJWTValidator(cfg.JWTSecret, cfg.JWTIssuer)
+	if err != nil {
+		log.Error("failed to initialize jwt validator", "error", err.Error())
+		os.Exit(1)
+	}
 
 	mongoClient, db, err := connectMongo(startupCtx, cfg.MongoURI, cfg.MongoDBName)
 	if err != nil {
@@ -61,7 +68,7 @@ func main() {
 		createRestaurantUC, createMenuItemUC, updateMenuItemUC, validateMenuItemsUC,
 	)
 
-	handler := httpdelivery.NewRouter(log, cfg.RequestTimeout, cfg.ServiceName, restaurantHandlers)
+	handler := httpdelivery.NewRouter(log, cfg.RequestTimeout, cfg.ServiceName, restaurantHandlers, tokenValidator)
 
 	server := &http.Server{
 		Addr:              ":" + cfg.HTTPPort,
