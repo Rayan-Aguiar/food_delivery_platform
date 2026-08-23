@@ -81,15 +81,18 @@ Implementar fluxos de leitura para listagem e detalhes de restaurantes/menu.
 Voce vai aprender:
 Como organizar casos de uso de leitura com separacao clara entre aplicacao e infraestrutura.
 
+Status atual:
+- [x] Concluida
+
 ### Checklist
-- [ ] Implementar `ListRestaurants`.
-- [ ] Implementar `GetRestaurantDetails`.
-- [ ] Implementar `ListRestaurantMenu`.
-- [ ] Definir filtros/paginacao inicial de leitura (quando aplicavel).
+- [x] Implementar `ListRestaurants`.
+- [x] Implementar `GetRestaurantDetails`.
+- [x] Implementar `ListRestaurantMenu`.
+- [x] Definir filtros/paginacao inicial de leitura (quando aplicavel) - adiado para a Fase 3, pois depende de paginacao real no Mongo.
 
 ### Criterio de pronto
-- [ ] Casos de uso retornam dados esperados para consultas publicas.
-- [ ] Testes unitarios cobrindo cenarios basicos e limites.
+- [x] Casos de uso retornam dados esperados para consultas publicas.
+- [x] Testes unitarios cobrindo cenarios basicos e limites.
 
 ---
 
@@ -100,18 +103,21 @@ Conectar dominio ao MongoDB com repositorios e desempenho minimo esperado.
 Voce vai aprender:
 Como modelar collections e indices para consultas de catalogo.
 
+Status atual:
+- [x] Concluida
+
 ### Checklist
-- [ ] Implementar repositorio Mongo de restaurantes.
-- [ ] Implementar repositorio Mongo de menu.
-- [ ] Criar collections `restaurants` e `menu_items`.
-- [ ] Garantir indices:
-  - [ ] `restaurant_id` em `menu_items`
-  - [ ] `available` em `menu_items`
-  - [ ] indice de texto por nome (restaurante/item)
+- [x] Implementar repositorio Mongo de restaurantes.
+- [x] Implementar repositorio Mongo de menu.
+- [x] Criar collections `restaurants` e `menu_items`.
+- [x] Garantir indices:
+  - [x] `restaurant_id` em `menu_items`
+  - [x] `available` em `menu_items`
+  - [x] indice de texto por nome (restaurante/item)
 
 ### Criterio de pronto
-- [ ] Leitura publica funcionando com dados persistidos no Mongo.
-- [ ] Indices aplicados automaticamente no startup.
+- [x] Leitura publica funcionando com dados persistidos no Mongo (validado via smoke test manual contra o container).
+- [x] Indices aplicados automaticamente no startup.
 
 ---
 

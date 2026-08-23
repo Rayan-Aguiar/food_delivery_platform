@@ -1,3 +1,4 @@
 .env.auth
 .env.*
 !.env.auth.example
+!.env.restaurant.example
