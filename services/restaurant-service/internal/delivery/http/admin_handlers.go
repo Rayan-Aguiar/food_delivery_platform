@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	apperrors "food_delivery_platform/shared/errors"
+	"food_delivery_platform/shared/middleware"
 	"food_delivery_platform/shared/utils"
 
 	"food_delivery_platform/services/restaurant-service/internal/application"
@@ -91,6 +92,8 @@ func (h *RestaurantHandlers) CreateMenuItemHandler(w http.ResponseWriter, r *htt
 		Category:       req.Category,
 		Available:      available,
 		IdempotencyKey: r.Header.Get("Idempotency-Key"),
+		CorrelationID:  utils.StringFromContext(r.Context(), middleware.CorrelationIDKey),
+		CausationID:    utils.StringFromContext(r.Context(), middleware.RequestIDKey),
 	})
 	if err != nil {
 		writeAppError(w, r, err)
@@ -113,12 +116,14 @@ func (h *RestaurantHandlers) UpdateMenuItemHandler(w http.ResponseWriter, r *htt
 	}
 
 	item, err := h.updateMenuItem.Execute(r.Context(), application.UpdateMenuItemInput{
-		RestaurantID: r.PathValue("id"),
-		ItemID:       r.PathValue("itemId"),
-		Name:         req.Name,
-		Price:        req.Price,
-		Category:     req.Category,
-		Available:    req.Available,
+		RestaurantID:  r.PathValue("id"),
+		ItemID:        r.PathValue("itemId"),
+		Name:          req.Name,
+		Price:         req.Price,
+		Category:      req.Category,
+		Available:     req.Available,
+		CorrelationID: utils.StringFromContext(r.Context(), middleware.CorrelationIDKey),
+		CausationID:   utils.StringFromContext(r.Context(), middleware.RequestIDKey),
 	})
 	if err != nil {
 		writeAppError(w, r, err)

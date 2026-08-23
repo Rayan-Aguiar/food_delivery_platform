@@ -19,14 +19,24 @@ type UpdateMenuItemInput struct {
 	Price     *float64
 	Category  *string
 	Available *bool
+
+	CorrelationID string
+	CausationID   string
+	Traceparent   string
 }
 
 type UpdateMenuItemUseCase struct {
-	menu ports.MenuRepository
+	menu   ports.MenuRepository
+	events ports.CatalogEventPublisher
 }
 
-func NewUpdateMenuItemUseCase(menu ports.MenuRepository) *UpdateMenuItemUseCase {
-	return &UpdateMenuItemUseCase{menu: menu}
+func NewUpdateMenuItemUseCase(menu ports.MenuRepository, eventPublisher ...ports.CatalogEventPublisher) *UpdateMenuItemUseCase {
+	publisher := ports.CatalogEventPublisher(noopCatalogEventPublisher{})
+	if len(eventPublisher) > 0 && eventPublisher[0] != nil {
+		publisher = eventPublisher[0]
+	}
+
+	return &UpdateMenuItemUseCase{menu: menu, events: publisher}
 }
 
 func (uc *UpdateMenuItemUseCase) Execute(ctx context.Context, input UpdateMenuItemInput) (entities.MenuItem, error) {
@@ -63,6 +73,33 @@ func (uc *UpdateMenuItemUseCase) Execute(ctx context.Context, input UpdateMenuIt
 
 	if err := uc.menu.Update(ctx, updated); err != nil {
 		return entities.MenuItem{}, apperrors.Internal("failed to update menu item", err)
+	}
+
+	// Best effort: os eventos sao publicados so quando o campo relevante realmente
+	// mudou, e uma falha de publicacao nao desfaz a atualizacao ja persistida.
+	if existing.Available != updated.Available {
+		_ = uc.events.PublishAvailabilityChanged(ctx, ports.AvailabilityChangedEvent{
+			RestaurantID:   updated.RestaurantID,
+			ItemID:         updated.ID,
+			Available:      updated.Available,
+			CorrelationID:  input.CorrelationID,
+			CausationID:    input.CausationID,
+			Traceparent:    input.Traceparent,
+			IdempotencyKey: updated.ID,
+		})
+	}
+	if existing.Name != updated.Name || existing.Price != updated.Price || existing.Category != updated.Category {
+		_ = uc.events.PublishMenuUpdated(ctx, ports.MenuUpdatedEvent{
+			RestaurantID:   updated.RestaurantID,
+			ItemID:         updated.ID,
+			Name:           updated.Name,
+			Price:          updated.Price,
+			Category:       string(updated.Category),
+			CorrelationID:  input.CorrelationID,
+			CausationID:    input.CausationID,
+			Traceparent:    input.Traceparent,
+			IdempotencyKey: updated.ID,
+		})
 	}
 
 	return updated, nil

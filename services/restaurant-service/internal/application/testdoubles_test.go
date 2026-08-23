@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"food_delivery_platform/services/restaurant-service/internal/domain/entities"
+	"food_delivery_platform/services/restaurant-service/internal/domain/ports"
 )
 
 // ── Restaurant Repository ─────────────────────────────────────────────────────
@@ -102,4 +103,30 @@ func (f *fakeIDGenerator) NewID() string {
 	id := f.ids[f.i%len(f.ids)]
 	f.i++
 	return id
+}
+
+// ── Catalog Event Publisher ───────────────────────────────────────────────────
+
+type fakeCatalogEventPublisher struct {
+	publishMenuUpdatedFn         func(context.Context, ports.MenuUpdatedEvent) error
+	publishAvailabilityChangedFn func(context.Context, ports.AvailabilityChangedEvent) error
+
+	menuUpdatedCalls         []ports.MenuUpdatedEvent
+	availabilityChangedCalls []ports.AvailabilityChangedEvent
+}
+
+func (f *fakeCatalogEventPublisher) PublishMenuUpdated(ctx context.Context, in ports.MenuUpdatedEvent) error {
+	f.menuUpdatedCalls = append(f.menuUpdatedCalls, in)
+	if f.publishMenuUpdatedFn != nil {
+		return f.publishMenuUpdatedFn(ctx, in)
+	}
+	return nil
+}
+
+func (f *fakeCatalogEventPublisher) PublishAvailabilityChanged(ctx context.Context, in ports.AvailabilityChangedEvent) error {
+	f.availabilityChangedCalls = append(f.availabilityChangedCalls, in)
+	if f.publishAvailabilityChangedFn != nil {
+		return f.publishAvailabilityChangedFn(ctx, in)
+	}
+	return nil
 }

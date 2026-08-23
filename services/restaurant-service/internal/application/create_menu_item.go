@@ -20,16 +20,31 @@ type CreateMenuItemInput struct {
 	// IdempotencyKey, quando informado, e usado como ID do item: reenviar a
 	// mesma chave repete o upsert no mesmo documento em vez de criar duplicatas.
 	IdempotencyKey string
+
+	CorrelationID string
+	CausationID   string
+	Traceparent   string
 }
 
 type CreateMenuItemUseCase struct {
 	restaurants ports.RestaurantRepository
 	menu        ports.MenuRepository
 	idGen       ports.IDGenerator
+	events      ports.CatalogEventPublisher
 }
 
-func NewCreateMenuItemUseCase(restaurants ports.RestaurantRepository, menu ports.MenuRepository, idGen ports.IDGenerator) *CreateMenuItemUseCase {
-	return &CreateMenuItemUseCase{restaurants: restaurants, menu: menu, idGen: idGen}
+func NewCreateMenuItemUseCase(
+	restaurants ports.RestaurantRepository,
+	menu ports.MenuRepository,
+	idGen ports.IDGenerator,
+	eventPublisher ...ports.CatalogEventPublisher,
+) *CreateMenuItemUseCase {
+	publisher := ports.CatalogEventPublisher(noopCatalogEventPublisher{})
+	if len(eventPublisher) > 0 && eventPublisher[0] != nil {
+		publisher = eventPublisher[0]
+	}
+
+	return &CreateMenuItemUseCase{restaurants: restaurants, menu: menu, idGen: idGen, events: publisher}
 }
 
 func (uc *CreateMenuItemUseCase) Execute(ctx context.Context, input CreateMenuItemInput) (entities.MenuItem, error) {
@@ -54,6 +69,19 @@ func (uc *CreateMenuItemUseCase) Execute(ctx context.Context, input CreateMenuIt
 	if err := uc.menu.Save(ctx, item); err != nil {
 		return entities.MenuItem{}, apperrors.Internal("failed to save menu item", err)
 	}
+
+	// Best effort: a criacao do item continua bem-sucedida mesmo com falha de publicacao.
+	_ = uc.events.PublishMenuUpdated(ctx, ports.MenuUpdatedEvent{
+		RestaurantID:   item.RestaurantID,
+		ItemID:         item.ID,
+		Name:           item.Name,
+		Price:          item.Price,
+		Category:       string(item.Category),
+		CorrelationID:  input.CorrelationID,
+		CausationID:    input.CausationID,
+		Traceparent:    input.Traceparent,
+		IdempotencyKey: input.IdempotencyKey,
+	})
 
 	return item, nil
 }

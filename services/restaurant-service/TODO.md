@@ -227,15 +227,18 @@ Publicar eventos de mudanca para integracao com outros servicos e analytics.
 Voce vai aprender:
 Como emitir eventos versionados de alteracao de estado de dominio.
 
+Status atual:
+- [x] Concluida
+
 ### Checklist
-- [ ] Publicar `restaurant.menu.updated.v1`.
-- [ ] Publicar `restaurant.availability.changed.v1`.
-- [ ] Incluir correlation_id e envelope padrao.
-- [ ] Definir estrategia minima de retry de publish.
+- [x] Publicar `restaurant.menu.updated.v1`.
+- [x] Publicar `restaurant.availability.changed.v1`.
+- [x] Incluir correlation_id e envelope padrao.
+- [x] Definir estrategia minima de retry de publish.
 
 ### Criterio de pronto
-- [ ] Eventos publicados com contrato consistente.
-- [ ] Consumidores conseguem reagir a mudancas de catalogo.
+- [x] Eventos publicados com contrato consistente (testes automatizados + smoke test manual: consumi os 3 eventos reais de uma fila bindada ao restaurant.exchange e conferi o envelope).
+- [x] Consumidores conseguem reagir a mudancas de catalogo (routing keys dedicadas por evento, exchange topic permite bind seletivo).
 
 ---
 

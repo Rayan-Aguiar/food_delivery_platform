@@ -18,6 +18,7 @@ type Config struct {
 	MongoDBName    string
 	JWTSecret      string
 	JWTIssuer      string
+	RabbitMQURL    string
 }
 
 func Load() Config {
@@ -36,7 +37,8 @@ func Load() Config {
 		JWTSecret:      getEnv("JWT_SECRET", ""),
 		// auth-service e' quem emite os tokens que este servico valida; o issuer
 		// esperado precisa bater com o JWT_ISSUER configurado la.
-		JWTIssuer: getEnv("JWT_ISSUER", "auth-service"),
+		JWTIssuer:   getEnv("JWT_ISSUER", "auth-service"),
+		RabbitMQURL: getEnv("RABBITMQ_URL", ""),
 	}
 }
 

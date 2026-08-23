@@ -11,11 +11,13 @@ import (
 const (
 	restaurantsCollection = "restaurants"
 	menuItemsCollection   = "menu_items"
+	outboxCollection      = "restaurant_outbox"
 )
 
 func EnsureIndexes(ctx context.Context, db *mdriver.Database) error {
 	restaurants := db.Collection(restaurantsCollection)
 	menuItems := db.Collection(menuItemsCollection)
+	outbox := db.Collection(outboxCollection)
 
 	_, err := restaurants.Indexes().CreateOne(ctx, mdriver.IndexModel{
 		Keys:    bson.D{{Key: "name", Value: "text"}},
@@ -37,6 +39,20 @@ func EnsureIndexes(ctx context.Context, db *mdriver.Database) error {
 		{
 			Keys:    bson.D{{Key: "name", Value: "text"}},
 			Options: options.Index().SetName("tx_menu_items_name"),
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	_, err = outbox.Indexes().CreateMany(ctx, []mdriver.IndexModel{
+		{
+			Keys:    bson.D{{Key: "created_at", Value: 1}},
+			Options: options.Index().SetName("ix_outbox_created_at"),
+		},
+		{
+			Keys:    bson.D{{Key: "routing_key", Value: 1}},
+			Options: options.Index().SetName("ix_outbox_routing_key"),
 		},
 	})
 	return err

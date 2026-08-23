@@ -1,5 +1,7 @@
 package mongo
 
+import "time"
+
 type restaurantDoc struct {
 	ID          string  `bson:"_id"`
 	Name        string  `bson:"name"`
@@ -16,4 +18,14 @@ type menuItemDoc struct {
 	Price        float64 `bson:"price"`
 	Category     string  `bson:"category"`
 	Available    bool    `bson:"available"`
+}
+
+type outboxMessageDoc struct {
+	ID         string            `bson:"_id"`
+	Exchange   string            `bson:"exchange"`
+	RoutingKey string            `bson:"routing_key"`
+	Body       []byte            `bson:"body"`
+	Headers    map[string]string `bson:"headers"`
+	CreatedAt  time.Time         `bson:"created_at"`
+	LastError  string            `bson:"last_error,omitempty"`
 }

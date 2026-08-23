@@ -74,6 +74,8 @@ func TestEventNames_NotEmptyAndUnique(t *testing.T) {
 		AuthLoginSucceeded,
 		NotificationSent,
 		NotificationFailed,
+		RestaurantMenuUpdated,
+		RestaurantAvailabilityChanged,
 	}
 
 	seen := map[string]bool{}

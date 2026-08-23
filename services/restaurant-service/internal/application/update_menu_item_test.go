@@ -10,6 +10,7 @@ import (
 	"food_delivery_platform/services/restaurant-service/internal/application"
 	"food_delivery_platform/services/restaurant-service/internal/domain/entities"
 	domainerrors "food_delivery_platform/services/restaurant-service/internal/domain/errors"
+	"food_delivery_platform/services/restaurant-service/internal/domain/ports"
 )
 
 func strPtr(s string) *string     { return &s }
@@ -129,5 +130,126 @@ func TestUpdateMenuItemUseCase_Execute(t *testing.T) {
 				t.Errorf("price = %v, want %v", got.Price, tc.wantPrice)
 			}
 		})
+	}
+}
+
+func TestUpdateMenuItemUseCase_PublishesAvailabilityChangedWhenAvailabilityFlips(t *testing.T) {
+	ctx := context.Background()
+	menu := &fakeMenuRepo{
+		getByIDFn: func(_ context.Context, _, _ string) (entities.MenuItem, error) {
+			return mustMenuItem(), nil
+		},
+	}
+	eventsPublisher := &fakeCatalogEventPublisher{}
+
+	uc := application.NewUpdateMenuItemUseCase(menu, eventsPublisher)
+	_, err := uc.Execute(ctx, application.UpdateMenuItemInput{
+		RestaurantID:  "rest-1",
+		ItemID:        "item-1",
+		Available:     boolPtr(false),
+		CorrelationID: "corr-1",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(eventsPublisher.availabilityChangedCalls) != 1 {
+		t.Fatalf("expected 1 availability changed event, got %d", len(eventsPublisher.availabilityChangedCalls))
+	}
+	got := eventsPublisher.availabilityChangedCalls[0]
+	if got.Available {
+		t.Error("expected available = false in event")
+	}
+	if got.CorrelationID != "corr-1" {
+		t.Errorf("correlation id = %q, want %q", got.CorrelationID, "corr-1")
+	}
+	if len(eventsPublisher.menuUpdatedCalls) != 0 {
+		t.Errorf("expected no menu updated event, got %d", len(eventsPublisher.menuUpdatedCalls))
+	}
+}
+
+func TestUpdateMenuItemUseCase_PublishesMenuUpdatedWhenPriceChanges(t *testing.T) {
+	ctx := context.Background()
+	menu := &fakeMenuRepo{
+		getByIDFn: func(_ context.Context, _, _ string) (entities.MenuItem, error) {
+			return mustMenuItem(), nil
+		},
+	}
+	eventsPublisher := &fakeCatalogEventPublisher{}
+
+	uc := application.NewUpdateMenuItemUseCase(menu, eventsPublisher)
+	_, err := uc.Execute(ctx, application.UpdateMenuItemInput{
+		RestaurantID: "rest-1",
+		ItemID:       "item-1",
+		Price:        floatPtr(49.9),
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(eventsPublisher.menuUpdatedCalls) != 1 {
+		t.Fatalf("expected 1 menu updated event, got %d", len(eventsPublisher.menuUpdatedCalls))
+	}
+	if eventsPublisher.menuUpdatedCalls[0].Price != 49.9 {
+		t.Errorf("price in event = %v, want 49.9", eventsPublisher.menuUpdatedCalls[0].Price)
+	}
+	if len(eventsPublisher.availabilityChangedCalls) != 0 {
+		t.Errorf("expected no availability changed event, got %d", len(eventsPublisher.availabilityChangedCalls))
+	}
+}
+
+func TestUpdateMenuItemUseCase_NoEventWhenNothingChanges(t *testing.T) {
+	ctx := context.Background()
+	menu := &fakeMenuRepo{
+		getByIDFn: func(_ context.Context, _, _ string) (entities.MenuItem, error) {
+			return mustMenuItem(), nil
+		},
+	}
+	eventsPublisher := &fakeCatalogEventPublisher{}
+
+	uc := application.NewUpdateMenuItemUseCase(menu, eventsPublisher)
+	item := mustMenuItem()
+	_, err := uc.Execute(ctx, application.UpdateMenuItemInput{
+		RestaurantID: "rest-1",
+		ItemID:       "item-1",
+		Available:    boolPtr(item.Available),
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(eventsPublisher.menuUpdatedCalls) != 0 || len(eventsPublisher.availabilityChangedCalls) != 0 {
+		t.Errorf("expected no events when nothing changed, got menuUpdated=%d availabilityChanged=%d",
+			len(eventsPublisher.menuUpdatedCalls), len(eventsPublisher.availabilityChangedCalls))
+	}
+}
+
+func TestUpdateMenuItemUseCase_PublishFailureIsBestEffort(t *testing.T) {
+	ctx := context.Background()
+	menu := &fakeMenuRepo{
+		getByIDFn: func(_ context.Context, _, _ string) (entities.MenuItem, error) {
+			return mustMenuItem(), nil
+		},
+	}
+	eventsPublisher := &fakeCatalogEventPublisher{
+		publishAvailabilityChangedFn: func(context.Context, ports.AvailabilityChangedEvent) error {
+			return errors.New("broker unavailable")
+		},
+	}
+
+	uc := application.NewUpdateMenuItemUseCase(menu, eventsPublisher)
+	got, err := uc.Execute(ctx, application.UpdateMenuItemInput{
+		RestaurantID: "rest-1",
+		ItemID:       "item-1",
+		Available:    boolPtr(false),
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got.Available {
+		t.Fatal("expected update to still succeed with available = false")
+	}
+	if len(eventsPublisher.availabilityChangedCalls) != 1 {
+		t.Fatalf("expected 1 publish attempt, got %d", len(eventsPublisher.availabilityChangedCalls))
 	}
 }

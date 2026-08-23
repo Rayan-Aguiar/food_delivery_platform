@@ -21,4 +21,7 @@ const (
 
 	NotificationSent   = "notification.sent.v1"
 	NotificationFailed = "notification.failed.v1"
+
+	RestaurantMenuUpdated         = "restaurant.menu.updated.v1"
+	RestaurantAvailabilityChanged = "restaurant.availability.changed.v1"
 )
