@@ -17,7 +17,7 @@ import (
 var silentLogger = slog.New(slog.NewTextHandler(io.Discard, nil))
 
 func newTestRouter() http.Handler {
-	restaurants := NewRestaurantHandlers(&fakeListRestaurants{}, &fakeGetRestaurantDetails{}, &fakeListRestaurantMenu{}, &fakeCreateRestaurant{}, &fakeCreateMenuItem{}, &fakeUpdateMenuItem{})
+	restaurants := NewRestaurantHandlers(&fakeListRestaurants{}, &fakeGetRestaurantDetails{}, &fakeListRestaurantMenu{}, &fakeCreateRestaurant{}, &fakeCreateMenuItem{}, &fakeUpdateMenuItem{}, &fakeValidateMenuItems{})
 	return NewRouter(silentLogger, 5*time.Second, "restaurant-service", restaurants)
 }
 
@@ -76,6 +76,17 @@ func TestRouter_CreateMenuItem(t *testing.T) {
 func TestRouter_UpdateMenuItem(t *testing.T) {
 	body := `{"available":false}`
 	r := httptest.NewRequest(http.MethodPatch, "/restaurants/rest-1/menu/items/item-1", strings.NewReader(body))
+	w := httptest.NewRecorder()
+	newTestRouter().ServeHTTP(w, r)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200; body: %s", w.Code, w.Body)
+	}
+}
+
+func TestRouter_ValidateMenuItems(t *testing.T) {
+	body := `{"item_ids":["item-1"]}`
+	r := httptest.NewRequest(http.MethodPost, "/restaurants/rest-1/menu/validate", strings.NewReader(body))
 	w := httptest.NewRecorder()
 	newTestRouter().ServeHTTP(w, r)
 

@@ -35,13 +35,18 @@ type updateMenuItemExecutor interface {
 	Execute(ctx context.Context, input application.UpdateMenuItemInput) (entities.MenuItem, error)
 }
 
+type validateMenuItemsExecutor interface {
+	Execute(ctx context.Context, input application.ValidateMenuItemsInput) (application.ValidateMenuItemsOutput, error)
+}
+
 type RestaurantHandlers struct {
-	listRestaurants  listRestaurantsExecutor
-	getDetails       getRestaurantDetailsExecutor
-	listMenu         listRestaurantMenuExecutor
-	createRestaurant createRestaurantExecutor
-	createMenuItem   createMenuItemExecutor
-	updateMenuItem   updateMenuItemExecutor
+	listRestaurants   listRestaurantsExecutor
+	getDetails        getRestaurantDetailsExecutor
+	listMenu          listRestaurantMenuExecutor
+	createRestaurant  createRestaurantExecutor
+	createMenuItem    createMenuItemExecutor
+	updateMenuItem    updateMenuItemExecutor
+	validateMenuItems validateMenuItemsExecutor
 }
 
 func NewRestaurantHandlers(
@@ -51,14 +56,16 @@ func NewRestaurantHandlers(
 	createRestaurant createRestaurantExecutor,
 	createMenuItem createMenuItemExecutor,
 	updateMenuItem updateMenuItemExecutor,
+	validateMenuItems validateMenuItemsExecutor,
 ) *RestaurantHandlers {
 	return &RestaurantHandlers{
-		listRestaurants:  listRestaurants,
-		getDetails:       getDetails,
-		listMenu:         listMenu,
-		createRestaurant: createRestaurant,
-		createMenuItem:   createMenuItem,
-		updateMenuItem:   updateMenuItem,
+		listRestaurants:   listRestaurants,
+		getDetails:        getDetails,
+		listMenu:          listMenu,
+		createRestaurant:  createRestaurant,
+		createMenuItem:    createMenuItem,
+		updateMenuItem:    updateMenuItem,
+		validateMenuItems: validateMenuItems,
 	}
 }
 

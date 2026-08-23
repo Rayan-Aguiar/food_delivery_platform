@@ -55,9 +55,10 @@ func main() {
 	createRestaurantUC := application.NewCreateRestaurantUseCase(restaurantRepo, idGen)
 	createMenuItemUC := application.NewCreateMenuItemUseCase(restaurantRepo, menuRepo, idGen)
 	updateMenuItemUC := application.NewUpdateMenuItemUseCase(menuRepo)
+	validateMenuItemsUC := application.NewValidateMenuItemsUseCase(restaurantRepo, menuRepo)
 	restaurantHandlers := httpdelivery.NewRestaurantHandlers(
 		listRestaurantsUC, getRestaurantDetailsUC, listRestaurantMenuUC,
-		createRestaurantUC, createMenuItemUC, updateMenuItemUC,
+		createRestaurantUC, createMenuItemUC, updateMenuItemUC, validateMenuItemsUC,
 	)
 
 	handler := httpdelivery.NewRouter(log, cfg.RequestTimeout, cfg.ServiceName, restaurantHandlers)

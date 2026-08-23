@@ -73,6 +73,24 @@ func (f *fakeUpdateMenuItem) Execute(ctx context.Context, input application.Upda
 	return mustMenuItem(), nil
 }
 
+type fakeValidateMenuItems struct {
+	fn func(ctx context.Context, input application.ValidateMenuItemsInput) (application.ValidateMenuItemsOutput, error)
+}
+
+func (f *fakeValidateMenuItems) Execute(ctx context.Context, input application.ValidateMenuItemsInput) (application.ValidateMenuItemsOutput, error) {
+	if f.fn != nil {
+		return f.fn(ctx, input)
+	}
+	return application.ValidateMenuItemsOutput{
+		RestaurantID:     input.RestaurantID,
+		RestaurantActive: true,
+		AllValid:         true,
+		Items: []application.MenuItemValidationResult{
+			{ItemID: "item-1", Found: true, Available: true, Price: 39.9, Valid: true},
+		},
+	}, nil
+}
+
 func mustRestaurant() entities.Restaurant {
 	r, err := entities.NewRestaurant("rest-1", "Pizza Place", "Main St 123", "+5511999999999", entities.RestaurantStatusActive, 5.0)
 	if err != nil {

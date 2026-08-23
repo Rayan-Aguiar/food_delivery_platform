@@ -53,7 +53,7 @@ func TestListRestaurantsHandler(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			h := NewRestaurantHandlers(tc.executor, &fakeGetRestaurantDetails{}, &fakeListRestaurantMenu{}, &fakeCreateRestaurant{}, &fakeCreateMenuItem{}, &fakeUpdateMenuItem{})
+			h := NewRestaurantHandlers(tc.executor, &fakeGetRestaurantDetails{}, &fakeListRestaurantMenu{}, &fakeCreateRestaurant{}, &fakeCreateMenuItem{}, &fakeUpdateMenuItem{}, &fakeValidateMenuItems{})
 
 			r := httptest.NewRequest(http.MethodGet, "/restaurants", nil)
 			w := httptest.NewRecorder()
@@ -83,7 +83,7 @@ func TestListRestaurantsHandler(t *testing.T) {
 }
 
 func TestListRestaurantsHandler_NilExecutor(t *testing.T) {
-	h := NewRestaurantHandlers(nil, &fakeGetRestaurantDetails{}, &fakeListRestaurantMenu{}, &fakeCreateRestaurant{}, &fakeCreateMenuItem{}, &fakeUpdateMenuItem{})
+	h := NewRestaurantHandlers(nil, &fakeGetRestaurantDetails{}, &fakeListRestaurantMenu{}, &fakeCreateRestaurant{}, &fakeCreateMenuItem{}, &fakeUpdateMenuItem{}, &fakeValidateMenuItems{})
 
 	r := httptest.NewRequest(http.MethodGet, "/restaurants", nil)
 	w := httptest.NewRecorder()
@@ -125,7 +125,7 @@ func TestGetRestaurantDetailsHandler(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			h := NewRestaurantHandlers(&fakeListRestaurants{}, tc.executor, &fakeListRestaurantMenu{}, &fakeCreateRestaurant{}, &fakeCreateMenuItem{}, &fakeUpdateMenuItem{})
+			h := NewRestaurantHandlers(&fakeListRestaurants{}, tc.executor, &fakeListRestaurantMenu{}, &fakeCreateRestaurant{}, &fakeCreateMenuItem{}, &fakeUpdateMenuItem{}, &fakeValidateMenuItems{})
 
 			r := httptest.NewRequest(http.MethodGet, "/restaurants/"+tc.id, nil)
 			r.SetPathValue("id", tc.id)
@@ -185,7 +185,7 @@ func TestListRestaurantMenuHandler(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			h := NewRestaurantHandlers(&fakeListRestaurants{}, &fakeGetRestaurantDetails{}, tc.executor, &fakeCreateRestaurant{}, &fakeCreateMenuItem{}, &fakeUpdateMenuItem{})
+			h := NewRestaurantHandlers(&fakeListRestaurants{}, &fakeGetRestaurantDetails{}, tc.executor, &fakeCreateRestaurant{}, &fakeCreateMenuItem{}, &fakeUpdateMenuItem{}, &fakeValidateMenuItems{})
 
 			r := httptest.NewRequest(http.MethodGet, "/restaurants/rest-1/menu", nil)
 			r.SetPathValue("id", "rest-1")

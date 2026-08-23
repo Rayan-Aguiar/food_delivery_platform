@@ -23,6 +23,9 @@ func NewRouter(log *slog.Logger, timeout time.Duration, serviceName string, rest
 		mux.HandleFunc("POST /restaurants", restaurants.CreateRestaurantHandler)
 		mux.HandleFunc("POST /restaurants/{id}/menu/items", restaurants.CreateMenuItemHandler)
 		mux.HandleFunc("PATCH /restaurants/{id}/menu/items/{itemId}", restaurants.UpdateMenuItemHandler)
+
+		// Rota interna consumida pelo order-service (ver Fase 7 para restricao de acesso).
+		mux.HandleFunc("POST /restaurants/{id}/menu/validate", restaurants.ValidateMenuItemsHandler)
 	}
 
 	mux.HandleFunc("/", NotFoundHandler)

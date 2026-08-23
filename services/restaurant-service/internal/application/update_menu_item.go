@@ -2,7 +2,6 @@ package application
 
 import (
 	"context"
-	"errors"
 
 	apperrors "food_delivery_platform/shared/errors"
 
@@ -37,10 +36,7 @@ func (uc *UpdateMenuItemUseCase) Execute(ctx context.Context, input UpdateMenuIt
 
 	existing, err := uc.menu.GetByID(ctx, input.RestaurantID, input.ItemID)
 	if err != nil {
-		if errors.Is(err, domainerrors.ErrMenuItemNotFound) {
-			return entities.MenuItem{}, apperrors.NotFound("menu item not found", nil)
-		}
-		return entities.MenuItem{}, apperrors.Internal("failed to get menu item", err)
+		return entities.MenuItem{}, mapNotFoundOrInternal(err, domainerrors.ErrMenuItemNotFound, "menu item not found", "failed to get menu item")
 	}
 
 	name := existing.Name

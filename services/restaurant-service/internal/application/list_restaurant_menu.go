@@ -2,7 +2,6 @@ package application
 
 import (
 	"context"
-	"errors"
 
 	apperrors "food_delivery_platform/shared/errors"
 
@@ -30,10 +29,7 @@ func (uc *ListRestaurantMenuUseCase) Execute(ctx context.Context, input ListRest
 	}
 
 	if _, err := uc.restaurants.GetByID(ctx, input.RestaurantID); err != nil {
-		if errors.Is(err, domainerrors.ErrRestaurantNotFound) {
-			return nil, apperrors.NotFound("restaurant not found", nil)
-		}
-		return nil, apperrors.Internal("failed to get restaurant", err)
+		return nil, mapNotFoundOrInternal(err, domainerrors.ErrRestaurantNotFound, "restaurant not found", "failed to get restaurant")
 	}
 
 	items, err := uc.menu.ListByRestaurantID(ctx, input.RestaurantID)

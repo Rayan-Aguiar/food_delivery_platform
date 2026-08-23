@@ -172,15 +172,18 @@ Entregar contrato interno para order-service validar itens e disponibilidade ant
 Voce vai aprender:
 Como construir endpoint interno orientado a regra critica de negocio (hot path).
 
+Status atual:
+- [x] Concluida (restricao de acesso ao endpoint interno fica para a Fase 7)
+
 ### Checklist
-- [ ] Implementar `POST /restaurants/{id}/menu/validate`.
-- [ ] Validar restaurante ativo/inativo.
-- [ ] Validar existencia e disponibilidade de itens.
-- [ ] Validar preco retornado para composicao de pedido.
+- [x] Implementar `POST /restaurants/{id}/menu/validate`.
+- [x] Validar restaurante ativo/inativo.
+- [x] Validar existencia e disponibilidade de itens.
+- [x] Validar preco retornado para composicao de pedido.
 
 ### Criterio de pronto
-- [ ] Endpoint interno retorna validacao confiavel para o order-service.
-- [ ] RN003 coberta: item indisponivel nao pode ser pedido.
+- [x] Endpoint interno retorna validacao confiavel para o order-service (testes automatizados + smoke test manual contra o Mongo real, cobrindo item disponivel, indisponivel, inexistente e restaurante inexistente).
+- [x] RN003 coberta: item indisponivel nao pode ser pedido (`valid=false`, `reason="item_unavailable"`).
 
 ---
 

@@ -23,7 +23,7 @@ func newAdminTestHandlers(create *fakeCreateRestaurant, createItem *fakeCreateMe
 	if updateItem == nil {
 		updateItem = &fakeUpdateMenuItem{}
 	}
-	return NewRestaurantHandlers(&fakeListRestaurants{}, &fakeGetRestaurantDetails{}, &fakeListRestaurantMenu{}, create, createItem, updateItem)
+	return NewRestaurantHandlers(&fakeListRestaurants{}, &fakeGetRestaurantDetails{}, &fakeListRestaurantMenu{}, create, createItem, updateItem, &fakeValidateMenuItems{})
 }
 
 // ── CreateRestaurantHandler ─────────────────────────────────────────────────────
