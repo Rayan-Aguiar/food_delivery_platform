@@ -128,15 +128,18 @@ Expor os endpoints publicos de catalogo para consumo via API Gateway.
 Voce vai aprender:
 Como transformar casos de uso em handlers HTTP com contratos estaveis.
 
+Status atual:
+- [x] Concluida
+
 ### Checklist
-- [ ] Implementar `GET /restaurants`.
-- [ ] Implementar `GET /restaurants/{id}`.
-- [ ] Implementar `GET /restaurants/{id}/menu`.
-- [ ] Padronizar respostas e erros HTTP.
+- [x] Implementar `GET /restaurants`.
+- [x] Implementar `GET /restaurants/{id}`.
+- [x] Implementar `GET /restaurants/{id}/menu`.
+- [x] Padronizar respostas e erros HTTP.
 
 ### Criterio de pronto
-- [ ] Endpoints publicos funcionam ponta a ponta.
-- [ ] Contratos HTTP consistentes e previsiveis.
+- [x] Endpoints publicos funcionam ponta a ponta (validado manualmente contra o Mongo real do container).
+- [x] Contratos HTTP consistentes e previsiveis.
 
 ---
 
@@ -147,15 +150,18 @@ Permitir operacoes de manutencao do catalogo por rotas protegidas de administrac
 Voce vai aprender:
 Como separar leitura publica de escrita administrativa com seguranca de acesso.
 
+Status atual:
+- [x] Concluida (protecao por JWT fica para a Fase 7, conforme planejado)
+
 ### Checklist
-- [ ] Implementar `POST /restaurants` (admin).
-- [ ] Implementar `POST /restaurants/{id}/menu/items` (admin).
-- [ ] Implementar `PATCH /restaurants/{id}/menu/items/{itemId}` (admin).
-- [ ] Preparar idempotencia opcional por `idempotency-key` para upsert admin.
+- [x] Implementar `POST /restaurants` (admin).
+- [x] Implementar `POST /restaurants/{id}/menu/items` (admin).
+- [x] Implementar `PATCH /restaurants/{id}/menu/items/{itemId}` (admin).
+- [x] Preparar idempotencia opcional por `idempotency-key` para upsert admin.
 
 ### Criterio de pronto
-- [ ] CRUD admin funcional e validado.
-- [ ] Alteracoes de catalogo refletidas nas consultas publicas.
+- [x] CRUD admin funcional e validado (testes automatizados + smoke test manual contra o Mongo real, incluindo retry com a mesma Idempotency-Key).
+- [x] Alteracoes de catalogo refletidas nas consultas publicas (validado via GET apos POST/PATCH no smoke test).
 
 ---
 

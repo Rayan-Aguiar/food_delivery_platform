@@ -87,3 +87,19 @@ func mustMenuItem() entities.MenuItem {
 	}
 	return m
 }
+
+// ── ID Generator ──────────────────────────────────────────────────────────────
+
+type fakeIDGenerator struct {
+	ids []string
+	i   int
+}
+
+func (f *fakeIDGenerator) NewID() string {
+	if len(f.ids) == 0 {
+		return "generated-id"
+	}
+	id := f.ids[f.i%len(f.ids)]
+	f.i++
+	return id
+}

@@ -11,9 +11,11 @@ import (
 	"syscall"
 	"time"
 
+	"food_delivery_platform/services/restaurant-service/internal/application"
 	"food_delivery_platform/services/restaurant-service/internal/config"
 	httpdelivery "food_delivery_platform/services/restaurant-service/internal/delivery/http"
 	mongorepo "food_delivery_platform/services/restaurant-service/internal/infrastructure/mongo"
+	"food_delivery_platform/services/restaurant-service/internal/infrastructure/system"
 	"food_delivery_platform/shared/logger"
 
 	mdriver "go.mongodb.org/mongo-driver/mongo"
@@ -42,7 +44,23 @@ func main() {
 		os.Exit(1)
 	}
 
-	handler := httpdelivery.NewRouter(log, cfg.RequestTimeout, cfg.ServiceName)
+	restaurantRepo := mongorepo.NewRestaurantRepository(db)
+	menuRepo := mongorepo.NewMenuRepository(db)
+
+	idGen := system.IDGenerator{}
+
+	listRestaurantsUC := application.NewListRestaurantsUseCase(restaurantRepo)
+	getRestaurantDetailsUC := application.NewGetRestaurantDetailsUseCase(restaurantRepo)
+	listRestaurantMenuUC := application.NewListRestaurantMenuUseCase(restaurantRepo, menuRepo)
+	createRestaurantUC := application.NewCreateRestaurantUseCase(restaurantRepo, idGen)
+	createMenuItemUC := application.NewCreateMenuItemUseCase(restaurantRepo, menuRepo, idGen)
+	updateMenuItemUC := application.NewUpdateMenuItemUseCase(menuRepo)
+	restaurantHandlers := httpdelivery.NewRestaurantHandlers(
+		listRestaurantsUC, getRestaurantDetailsUC, listRestaurantMenuUC,
+		createRestaurantUC, createMenuItemUC, updateMenuItemUC,
+	)
+
+	handler := httpdelivery.NewRouter(log, cfg.RequestTimeout, cfg.ServiceName, restaurantHandlers)
 
 	server := &http.Server{
 		Addr:              ":" + cfg.HTTPPort,
