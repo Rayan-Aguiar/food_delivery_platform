@@ -279,7 +279,7 @@ Voce vai aprender:
 Como preparar servico para consumo por times e execucao em ambiente containerizado.
 
 Status atual:
-- [ ] Em validacao (codigo pronto; build e compose pendentes de teste)
+- [x] Concluida
 
 ### Checklist
 - [x] Gerar/atualizar OpenAPI com rotas publicas, admin e interna (`docs/openapi/openapi.v1.yaml`, servido no Swagger UI junto com o auth).
@@ -287,9 +287,9 @@ Status atual:
 - [x] Validar variaveis de ambiente no README do servico.
 
 ### Criterio de pronto
-- [ ] OpenAPI publica e valida (escrita; falta rodar o lint).
-- [ ] Build de imagem funcionando (Dockerfile escrito; falta validar o build).
-- [ ] Servico pronto para compose e integracao no roadmap (`restaurant-service` em `docker-compose.restaurant.yml`; falta subir e testar).
+- [x] OpenAPI publica e valida (lint do Redocly sem erros; servida no Swagger UI junto com o auth).
+- [x] Build de imagem funcionando (multi-stage, roda como usuario `app`, healthcheck `healthy`).
+- [x] Servico pronto para compose e integracao no roadmap (`docker-compose.restaurant.yml` validado com Mongo, RabbitMQ, Prometheus e token real do auth-service).
 
 ### Pendencias conhecidas (fora do escopo deste TODO)
 - Autenticacao servico-a-servico no endpoint interno de validacao (ver nota da Fase 7).
