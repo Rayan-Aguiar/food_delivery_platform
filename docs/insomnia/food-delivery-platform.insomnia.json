@@ -1,0 +1,1099 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-11-19T23:53:37.631Z",
+  "__export_source": "insomnia.desktop.app:v10.0.0",
+  "resources": [
+    {
+      "_id": "wrk_food_delivery",
+      "_type": "workspace",
+      "parentId": null,
+      "name": "Food Delivery Platform",
+      "description": "Rotas do auth-service, restaurant-service e api-gateway.",
+      "scope": "collection",
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "env_base",
+      "_type": "environment",
+      "parentId": "wrk_food_delivery",
+      "name": "Base Environment",
+      "data": {
+        "auth_url": "http://localhost:8081",
+        "restaurant_url": "http://localhost:8083",
+        "gateway_url": "http://localhost:8080",
+        "email": "dev@fooddelivery.local",
+        "password": "Senha@Forte123",
+        "access_token": "",
+        "refresh_token": "",
+        "restaurant_id": "",
+        "item_id": ""
+      },
+      "dataPropertyOrder": {
+        "&": [
+          "auth_url",
+          "restaurant_url",
+          "gateway_url",
+          "email",
+          "password",
+          "access_token",
+          "refresh_token",
+          "restaurant_id",
+          "item_id"
+        ]
+      },
+      "color": null,
+      "isPrivate": false,
+      "metaSortKey": 0,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "env_local",
+      "_type": "environment",
+      "parentId": "env_base",
+      "name": "Local",
+      "data": {
+        "auth_url": "http://localhost:8081",
+        "restaurant_url": "http://localhost:8083",
+        "gateway_url": "http://localhost:8080",
+        "email": "dev@fooddelivery.local",
+        "password": "Senha@Forte123",
+        "access_token": "",
+        "refresh_token": "",
+        "restaurant_id": "",
+        "item_id": ""
+      },
+      "dataPropertyOrder": {
+        "&": [
+          "auth_url",
+          "restaurant_url",
+          "gateway_url",
+          "email",
+          "password",
+          "access_token",
+          "refresh_token",
+          "restaurant_id",
+          "item_id"
+        ]
+      },
+      "color": "#7d69cb",
+      "isPrivate": false,
+      "metaSortKey": 1,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "jar_food_delivery",
+      "_type": "cookie_jar",
+      "parentId": "wrk_food_delivery",
+      "name": "Default Jar",
+      "cookies": [],
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "fld_auth",
+      "_type": "request_group",
+      "parentId": "wrk_food_delivery",
+      "name": "Auth Service",
+      "description": "Porta 8081. Emite os JWT aceitos pelas rotas admin do restaurant-service.",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 1,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "fld_auth_health",
+      "_type": "request_group",
+      "parentId": "fld_auth",
+      "name": "Health",
+      "description": "",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 2,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "req_auth_live",
+      "_type": "request",
+      "parentId": "fld_auth_health",
+      "name": "Live",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.auth_url }}/health/live",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "afterResponseScript": "",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "metaSortKey": 3,
+      "isPrivate": false,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "req_auth_ready",
+      "_type": "request",
+      "parentId": "fld_auth_health",
+      "name": "Ready",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.auth_url }}/health/ready",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "afterResponseScript": "",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "metaSortKey": 4,
+      "isPrivate": false,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "req_auth_health",
+      "_type": "request",
+      "parentId": "fld_auth_health",
+      "name": "Auth health",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.auth_url }}/auth/health",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "afterResponseScript": "",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "metaSortKey": 5,
+      "isPrivate": false,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "req_auth_metrics",
+      "_type": "request",
+      "parentId": "fld_auth_health",
+      "name": "Metrics (Prometheus)",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.auth_url }}/metrics",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "afterResponseScript": "",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "metaSortKey": 6,
+      "isPrivate": false,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "fld_auth_flow",
+      "_type": "request_group",
+      "parentId": "fld_auth",
+      "name": "Autenticacao",
+      "description": "",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 7,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "req_auth_register",
+      "_type": "request",
+      "parentId": "fld_auth_flow",
+      "name": "1. Register",
+      "description": "Cria o usuario do environment e ja salva os tokens. Se ja existir (409), siga para o Login.",
+      "method": "POST",
+      "url": "{{ _.auth_url }}/auth/register",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"{{ _.email }}\",\n  \"password\": \"{{ _.password }}\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Idempotency-Key",
+          "value": "{% uuid 'v4' %}"
+        }
+      ],
+      "authentication": {},
+      "afterResponseScript": "// Salva campos da resposta no environment ativo.\nconst status = insomnia.response.code;\nif (status >= 200 && status < 300) {\n  const body = insomnia.response.json();\n  insomnia.environment.set(\"access_token\", body.access_token);\n  insomnia.environment.set(\"refresh_token\", body.refresh_token);\n}\n",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "metaSortKey": 8,
+      "isPrivate": false,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "req_auth_login",
+      "_type": "request",
+      "parentId": "fld_auth_flow",
+      "name": "2. Login",
+      "description": "Salva access_token e refresh_token no environment ativo (aba Scripts > After-response). Rode de novo quando o token expirar (15 min).",
+      "method": "POST",
+      "url": "{{ _.auth_url }}/auth/login",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"{{ _.email }}\",\n  \"password\": \"{{ _.password }}\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Idempotency-Key",
+          "value": "{% uuid 'v4' %}"
+        }
+      ],
+      "authentication": {},
+      "afterResponseScript": "// Salva campos da resposta no environment ativo.\nconst status = insomnia.response.code;\nif (status >= 200 && status < 300) {\n  const body = insomnia.response.json();\n  insomnia.environment.set(\"access_token\", body.access_token);\n  insomnia.environment.set(\"refresh_token\", body.refresh_token);\n}\n",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "metaSortKey": 9,
+      "isPrivate": false,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "req_auth_refresh",
+      "_type": "request",
+      "parentId": "fld_auth_flow",
+      "name": "3. Refresh",
+      "description": "Troca o refresh_token por um par novo e atualiza as duas variaveis. Depois de um Logout, faca Login de novo.",
+      "method": "POST",
+      "url": "{{ _.auth_url }}/auth/refresh",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"refresh_token\": \"{{ _.refresh_token }}\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "afterResponseScript": "// Salva campos da resposta no environment ativo.\nconst status = insomnia.response.code;\nif (status >= 200 && status < 300) {\n  const body = insomnia.response.json();\n  insomnia.environment.set(\"access_token\", body.access_token);\n  insomnia.environment.set(\"refresh_token\", body.refresh_token);\n}\n",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "metaSortKey": 10,
+      "isPrivate": false,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "req_auth_logout",
+      "_type": "request",
+      "parentId": "fld_auth_flow",
+      "name": "4. Logout",
+      "description": "Revoga o refresh_token do ultimo Login (204).",
+      "method": "POST",
+      "url": "{{ _.auth_url }}/auth/logout",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"refresh_token\": \"{{ _.refresh_token }}\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "afterResponseScript": "",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "metaSortKey": 11,
+      "isPrivate": false,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "fld_rest",
+      "_type": "request_group",
+      "parentId": "wrk_food_delivery",
+      "name": "Restaurant Service",
+      "description": "Porta 8083. Rotas admin exigem o access_token do auth-service.",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 12,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "fld_rest_health",
+      "_type": "request_group",
+      "parentId": "fld_rest",
+      "name": "Health e Metrics",
+      "description": "",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 13,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "req_rest_live",
+      "_type": "request",
+      "parentId": "fld_rest_health",
+      "name": "Live",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.restaurant_url }}/health/live",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "afterResponseScript": "",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "metaSortKey": 14,
+      "isPrivate": false,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "req_rest_ready",
+      "_type": "request",
+      "parentId": "fld_rest_health",
+      "name": "Ready",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.restaurant_url }}/health/ready",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "afterResponseScript": "",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "metaSortKey": 15,
+      "isPrivate": false,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "req_rest_metrics",
+      "_type": "request",
+      "parentId": "fld_rest_health",
+      "name": "Metrics (Prometheus)",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.restaurant_url }}/metrics",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "afterResponseScript": "",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "metaSortKey": 16,
+      "isPrivate": false,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "fld_rest_admin",
+      "_type": "request_group",
+      "parentId": "fld_rest",
+      "name": "Admin (JWT)",
+      "description": "Rode Auth Service > Login antes.",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 17,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "req_rest_create",
+      "_type": "request",
+      "parentId": "fld_rest_admin",
+      "name": "1. Criar restaurante",
+      "description": "Salva o id criado em restaurant_id do environment ativo.",
+      "method": "POST",
+      "url": "{{ _.restaurant_url }}/restaurants",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Pizzaria Bella Napoli\",\n  \"address\": \"Rua das Flores, 123 - Sao Paulo\",\n  \"phone_number\": \"11999999999\",\n  \"delivery_fee\": 7.5\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Idempotency-Key",
+          "value": "{% uuid 'v4' %}"
+        }
+      ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.access_token }}",
+        "prefix": ""
+      },
+      "afterResponseScript": "// Salva campos da resposta no environment ativo.\nconst status = insomnia.response.code;\nif (status >= 200 && status < 300) {\n  const body = insomnia.response.json();\n  insomnia.environment.set(\"restaurant_id\", body.id);\n}\n",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "metaSortKey": 18,
+      "isPrivate": false,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "req_item_create",
+      "_type": "request",
+      "parentId": "fld_rest_admin",
+      "name": "2. Criar item do cardapio",
+      "description": "Salva o id criado em item_id do environment ativo. Categorias validas: pizzaria, hamburgueria, japones, comida brasileira, sorveteria.",
+      "method": "POST",
+      "url": "{{ _.restaurant_url }}/restaurants/{{ _.restaurant_id }}/menu/items",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Pizza Margherita\",\n  \"price\": 49.9,\n  \"category\": \"pizzaria\",\n  \"available\": true\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Idempotency-Key",
+          "value": "{% uuid 'v4' %}"
+        }
+      ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.access_token }}",
+        "prefix": ""
+      },
+      "afterResponseScript": "// Salva campos da resposta no environment ativo.\nconst status = insomnia.response.code;\nif (status >= 200 && status < 300) {\n  const body = insomnia.response.json();\n  insomnia.environment.set(\"item_id\", body.id);\n}\n",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "metaSortKey": 19,
+      "isPrivate": false,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "req_item_update",
+      "_type": "request",
+      "parentId": "fld_rest_admin",
+      "name": "3. Atualizar item (PATCH)",
+      "description": "Todos os campos sao opcionais; envie so o que mudar.",
+      "method": "PATCH",
+      "url": "{{ _.restaurant_url }}/restaurants/{{ _.restaurant_id }}/menu/items/{{ _.item_id }}",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"price\": 54.9,\n  \"available\": false\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.access_token }}",
+        "prefix": ""
+      },
+      "afterResponseScript": "",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "metaSortKey": 20,
+      "isPrivate": false,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "fld_rest_public",
+      "_type": "request_group",
+      "parentId": "fld_rest",
+      "name": "Publico",
+      "description": "Sem autenticacao, com rate limit por IP.",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 21,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "req_rest_list",
+      "_type": "request",
+      "parentId": "fld_rest_public",
+      "name": "Listar restaurantes",
+      "description": "page ate 1000; page_size entre 1 e 100 (default 20).",
+      "method": "GET",
+      "url": "{{ _.restaurant_url }}/restaurants",
+      "body": {},
+      "parameters": [
+        {
+          "name": "page",
+          "value": "1",
+          "disabled": false
+        },
+        {
+          "name": "page_size",
+          "value": "20",
+          "disabled": false
+        }
+      ],
+      "headers": [],
+      "authentication": {},
+      "afterResponseScript": "",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "metaSortKey": 22,
+      "isPrivate": false,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "req_rest_get",
+      "_type": "request",
+      "parentId": "fld_rest_public",
+      "name": "Detalhes do restaurante",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.restaurant_url }}/restaurants/{{ _.restaurant_id }}",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "afterResponseScript": "",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "metaSortKey": 23,
+      "isPrivate": false,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "req_rest_menu",
+      "_type": "request",
+      "parentId": "fld_rest_public",
+      "name": "Cardapio do restaurante",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.restaurant_url }}/restaurants/{{ _.restaurant_id }}/menu",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "afterResponseScript": "",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "metaSortKey": 24,
+      "isPrivate": false,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "fld_rest_internal",
+      "_type": "request_group",
+      "parentId": "fld_rest",
+      "name": "Interno (order-service)",
+      "description": "Sem autenticacao por enquanto (servico-a-servico pendente).",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 25,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "req_rest_validate",
+      "_type": "request",
+      "parentId": "fld_rest_internal",
+      "name": "Validar itens do pedido",
+      "description": "Ate 100 item_ids. O segundo id nao existe, para mostrar item_not_found.",
+      "method": "POST",
+      "url": "{{ _.restaurant_url }}/restaurants/{{ _.restaurant_id }}/menu/validate",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"item_ids\": [\n    \"{{ _.item_id }}\",\n    \"000000000000000000000000\"\n  ]\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "afterResponseScript": "",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "metaSortKey": 26,
+      "isPrivate": false,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "fld_rest_errors",
+      "_type": "request_group",
+      "parentId": "fld_rest",
+      "name": "Cenarios de erro",
+      "description": "Respostas esperadas no nome de cada request.",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 27,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "req_err_no_token",
+      "_type": "request",
+      "parentId": "fld_rest_errors",
+      "name": "401 - Admin sem token",
+      "description": "",
+      "method": "POST",
+      "url": "{{ _.restaurant_url }}/restaurants",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Sem token\",\n  \"address\": \"Rua X, 1\",\n  \"phone_number\": \"11900000000\",\n  \"delivery_fee\": 1\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "afterResponseScript": "",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "metaSortKey": 28,
+      "isPrivate": false,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "req_err_page_size",
+      "_type": "request",
+      "parentId": "fld_rest_errors",
+      "name": "400 - page_size acima de 100",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.restaurant_url }}/restaurants",
+      "body": {},
+      "parameters": [
+        {
+          "name": "page",
+          "value": "1",
+          "disabled": false
+        },
+        {
+          "name": "page_size",
+          "value": "500",
+          "disabled": false
+        }
+      ],
+      "headers": [],
+      "authentication": {},
+      "afterResponseScript": "",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "metaSortKey": 29,
+      "isPrivate": false,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "req_err_category",
+      "_type": "request",
+      "parentId": "fld_rest_errors",
+      "name": "400 - Categoria invalida",
+      "description": "",
+      "method": "POST",
+      "url": "{{ _.restaurant_url }}/restaurants/{{ _.restaurant_id }}/menu/items",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Taco\",\n  \"price\": 20,\n  \"category\": \"mexicana\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Idempotency-Key",
+          "value": "{% uuid 'v4' %}"
+        }
+      ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.access_token }}",
+        "prefix": ""
+      },
+      "afterResponseScript": "",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "metaSortKey": 30,
+      "isPrivate": false,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "req_err_idem_retry",
+      "_type": "request",
+      "parentId": "fld_rest_errors",
+      "name": "201 - Retry com a mesma Idempotency-Key",
+      "description": "Envie duas vezes: a segunda devolve o mesmo item. Troque a chave para criar outro.",
+      "method": "POST",
+      "url": "{{ _.restaurant_url }}/restaurants/{{ _.restaurant_id }}/menu/items",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Pizza Calabresa\",\n  \"price\": 52.9,\n  \"category\": \"pizzaria\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Idempotency-Key",
+          "value": "insomnia-retry-demo-1"
+        }
+      ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.access_token }}",
+        "prefix": ""
+      },
+      "afterResponseScript": "",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "metaSortKey": 31,
+      "isPrivate": false,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "req_err_not_found",
+      "_type": "request",
+      "parentId": "fld_rest_errors",
+      "name": "404 - Restaurante inexistente",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.restaurant_url }}/restaurants/00000000-0000-0000-0000-000000000000",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "afterResponseScript": "",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "metaSortKey": 32,
+      "isPrivate": false,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "fld_gw",
+      "_type": "request_group",
+      "parentId": "wrk_food_delivery",
+      "name": "API Gateway",
+      "description": "Porta 8080. Ainda nao esta no Docker Compose: suba com go run ./cmd/api em api-gateway/. So faz proxy das rotas de auth.",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 33,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "req_gw_live",
+      "_type": "request",
+      "parentId": "fld_gw",
+      "name": "Live",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.gateway_url }}/health/live",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "afterResponseScript": "",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "metaSortKey": 34,
+      "isPrivate": false,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "req_gw_ready",
+      "_type": "request",
+      "parentId": "fld_gw",
+      "name": "Ready",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.gateway_url }}/health/ready",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "afterResponseScript": "",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "metaSortKey": 35,
+      "isPrivate": false,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "req_gw_register",
+      "_type": "request",
+      "parentId": "fld_gw",
+      "name": "Register (proxy)",
+      "description": "",
+      "method": "POST",
+      "url": "{{ _.gateway_url }}/auth/register",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"{{ _.email }}\",\n  \"password\": \"{{ _.password }}\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "afterResponseScript": "// Salva campos da resposta no environment ativo.\nconst status = insomnia.response.code;\nif (status >= 200 && status < 300) {\n  const body = insomnia.response.json();\n  insomnia.environment.set(\"access_token\", body.access_token);\n  insomnia.environment.set(\"refresh_token\", body.refresh_token);\n}\n",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "metaSortKey": 36,
+      "isPrivate": false,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "req_gw_login",
+      "_type": "request",
+      "parentId": "fld_gw",
+      "name": "Login (proxy)",
+      "description": "",
+      "method": "POST",
+      "url": "{{ _.gateway_url }}/auth/login",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"{{ _.email }}\",\n  \"password\": \"{{ _.password }}\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "afterResponseScript": "// Salva campos da resposta no environment ativo.\nconst status = insomnia.response.code;\nif (status >= 200 && status < 300) {\n  const body = insomnia.response.json();\n  insomnia.environment.set(\"access_token\", body.access_token);\n  insomnia.environment.set(\"refresh_token\", body.refresh_token);\n}\n",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "metaSortKey": 37,
+      "isPrivate": false,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "req_gw_refresh",
+      "_type": "request",
+      "parentId": "fld_gw",
+      "name": "Refresh (proxy)",
+      "description": "",
+      "method": "POST",
+      "url": "{{ _.gateway_url }}/auth/refresh",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"refresh_token\": \"{{ _.refresh_token }}\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "afterResponseScript": "// Salva campos da resposta no environment ativo.\nconst status = insomnia.response.code;\nif (status >= 200 && status < 300) {\n  const body = insomnia.response.json();\n  insomnia.environment.set(\"access_token\", body.access_token);\n  insomnia.environment.set(\"refresh_token\", body.refresh_token);\n}\n",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "metaSortKey": 38,
+      "isPrivate": false,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    },
+    {
+      "_id": "req_gw_logout",
+      "_type": "request",
+      "parentId": "fld_gw",
+      "name": "Logout (proxy)",
+      "description": "",
+      "method": "POST",
+      "url": "{{ _.gateway_url }}/auth/logout",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"refresh_token\": \"{{ _.refresh_token }}\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "afterResponseScript": "",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "metaSortKey": 39,
+      "isPrivate": false,
+      "created": 1795132417631,
+      "modified": 1795132417631
+    }
+  ]
+}
