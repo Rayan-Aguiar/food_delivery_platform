@@ -28,5 +28,37 @@ services:
       timeout: 5s
       retries: 8
 
+  restaurant-service:
+    build:
+      context: ../../
+      dockerfile: services/restaurant-service/Dockerfile
+    container_name: ${RESTAURANT_SERVICE_CONTAINER_NAME}
+    restart: ${RESTAURANT_RESTART_POLICY}
+    depends_on:
+      restaurant-mongo:
+        condition: service_healthy
+      restaurant-rabbitmq:
+        condition: service_healthy
+    environment:
+      SERVICE_NAME: ${SERVICE_NAME}
+      SERVICE_VERSION: ${SERVICE_VERSION}
+      ENVIRONMENT: ${ENVIRONMENT}
+      HTTP_PORT: ${HTTP_PORT}
+      LOG_LEVEL: ${LOG_LEVEL}
+      REQUEST_TIMEOUT_SECONDS: ${REQUEST_TIMEOUT_SECONDS}
+      MONGO_URI: ${MONGO_URI}
+      MONGO_DB_NAME: ${MONGO_DB_NAME}
+      RABBITMQ_URL: ${RABBITMQ_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ISSUER: ${JWT_ISSUER}
+      OTEL_ENABLED: ${OTEL_ENABLED}
+    ports:
+      - "${RESTAURANT_SERVICE_PORT}:${HTTP_PORT}"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:${HTTP_PORT}/health/live"]
+      interval: 15s
+      timeout: 3s
+      retries: 5
+
 volumes:
   restaurant_mongo_data:

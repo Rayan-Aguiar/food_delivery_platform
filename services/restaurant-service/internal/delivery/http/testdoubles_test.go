@@ -8,14 +8,18 @@ import (
 )
 
 type fakeListRestaurants struct {
-	fn func(ctx context.Context) ([]entities.Restaurant, error)
+	fn func(ctx context.Context, input application.ListRestaurantsInput) (application.ListRestaurantsOutput, error)
 }
 
-func (f *fakeListRestaurants) Execute(ctx context.Context) ([]entities.Restaurant, error) {
+func (f *fakeListRestaurants) Execute(ctx context.Context, input application.ListRestaurantsInput) (application.ListRestaurantsOutput, error) {
 	if f.fn != nil {
-		return f.fn(ctx)
+		return f.fn(ctx, input)
 	}
-	return []entities.Restaurant{mustRestaurant()}, nil
+	return application.ListRestaurantsOutput{
+		Restaurants: []entities.Restaurant{mustRestaurant()},
+		Page:        1,
+		PageSize:    application.DefaultRestaurantsPageSize,
+	}, nil
 }
 
 type fakeGetRestaurantDetails struct {

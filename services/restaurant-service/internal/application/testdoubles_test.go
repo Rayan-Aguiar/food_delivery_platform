@@ -10,14 +10,14 @@ import (
 // ── Restaurant Repository ─────────────────────────────────────────────────────
 
 type fakeRestaurantRepo struct {
-	listFn    func(ctx context.Context) ([]entities.Restaurant, error)
+	listFn    func(ctx context.Context, query ports.ListRestaurantsQuery) ([]entities.Restaurant, error)
 	getByIDFn func(ctx context.Context, id string) (entities.Restaurant, error)
 	saveFn    func(ctx context.Context, restaurant entities.Restaurant) error
 }
 
-func (f *fakeRestaurantRepo) List(ctx context.Context) ([]entities.Restaurant, error) {
+func (f *fakeRestaurantRepo) List(ctx context.Context, query ports.ListRestaurantsQuery) ([]entities.Restaurant, error) {
 	if f.listFn != nil {
-		return f.listFn(ctx)
+		return f.listFn(ctx, query)
 	}
 	return nil, nil
 }

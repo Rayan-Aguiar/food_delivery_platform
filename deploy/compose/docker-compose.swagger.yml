@@ -6,6 +6,10 @@ services:
     ports:
       - "8085:8080"
     environment:
-      SWAGGER_JSON: /spec/openapi.v1.yaml
+      # Seletor no topo da UI para alternar entre os servicos.
+      URLS: >-
+        [{"url": "/specs/auth/openapi.v1.yaml", "name": "auth-service"},
+         {"url": "/specs/restaurant/openapi.v1.yaml", "name": "restaurant-service"}]
     volumes:
-      - ../../services/auth-service/docs/openapi:/spec:ro
+      - ../../services/auth-service/docs/openapi:/usr/share/nginx/html/specs/auth:ro
+      - ../../services/restaurant-service/docs/openapi:/usr/share/nginx/html/specs/restaurant:ro

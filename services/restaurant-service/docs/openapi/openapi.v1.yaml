@@ -1,0 +1,598 @@
+openapi: 3.0.3
+info:
+  title: Restaurant Service API
+  version: 1.0.0
+  description: |
+    Contrato HTTP do restaurant-service: catalogo publico (restaurantes e cardapio),
+    administracao do catalogo e validacao interna de itens para o order-service.
+
+    Erros seguem sempre o formato `ErrorResponse`. Toda resposta carrega os
+    headers `X-Request-ID` e `X-Correlation-ID` (enviados pelo cliente ou gerados).
+  license:
+    name: Uso educacional
+    url: https://example.com/educational-use
+
+servers:
+  - url: http://localhost:8083
+    description: Execucao local
+  - url: http://restaurant-service:8083
+    description: Docker Compose network
+
+security: []
+
+tags:
+  - name: Health
+    description: Endpoints de saude e operacao
+  - name: Catalog
+    description: Consulta publica de restaurantes e cardapio (rate limit por IP)
+  - name: Admin
+    description: Manutencao do catalogo (exige JWT emitido pelo auth-service)
+  - name: Internal
+    description: Contratos servico-a-servico
+
+paths:
+  /health/live:
+    get:
+      tags: [Health]
+      summary: Liveness probe
+      operationId: getLiveHealth
+      responses:
+        '200':
+          description: Processo vivo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+              example:
+                status: live
+
+  /health/ready:
+    get:
+      tags: [Health]
+      summary: Readiness probe
+      operationId: getReadyHealth
+      responses:
+        '200':
+          description: Servico pronto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadyResponse'
+              example:
+                service: restaurant-service
+                status: ready
+
+  /metrics:
+    get:
+      tags: [Health]
+      summary: Metricas Prometheus
+      operationId: getMetrics
+      responses:
+        '200':
+          description: Metricas no formato de exposicao do Prometheus
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /restaurants:
+    get:
+      tags: [Catalog]
+      summary: Lista restaurantes (paginado)
+      description: Ordenacao estavel por id. Use `pagination.has_more` para saber se ha proxima pagina.
+      operationId: listRestaurants
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Pagina de restaurantes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListRestaurantsResponse'
+              example:
+                restaurants:
+                  - id: 3f2c9a1e-0d1b-4c7a-9a55-1c2b3d4e5f60
+                    name: Pizzaria Napoli
+                    address: Rua das Flores, 123
+                    phone_number: '+5511999990000'
+                    status: active
+                    delivery_fee: 7.5
+                pagination:
+                  page: 1
+                  page_size: 20
+                  has_more: false
+        '400':
+          $ref: '#/components/responses/InvalidArgument'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/Internal'
+
+    post:
+      tags: [Admin]
+      summary: Cria restaurante
+      operationId: createRestaurant
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRestaurantRequest'
+      responses:
+        '201':
+          description: Restaurante criado (ou substituido, quando a Idempotency-Key ja existe)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Restaurant'
+        '400':
+          $ref: '#/components/responses/InvalidArgument'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '500':
+          $ref: '#/components/responses/Internal'
+
+  /restaurants/{id}:
+    get:
+      tags: [Catalog]
+      summary: Detalhes de um restaurante
+      operationId: getRestaurant
+      parameters:
+        - $ref: '#/components/parameters/RestaurantId'
+      responses:
+        '200':
+          description: Restaurante
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Restaurant'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/Internal'
+
+  /restaurants/{id}/menu:
+    get:
+      tags: [Catalog]
+      summary: Cardapio de um restaurante
+      operationId: listRestaurantMenu
+      parameters:
+        - $ref: '#/components/parameters/RestaurantId'
+      responses:
+        '200':
+          description: Itens do cardapio
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListMenuResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/Internal'
+
+  /restaurants/{id}/menu/items:
+    post:
+      tags: [Admin]
+      summary: Cria item no cardapio
+      description: |
+        Com `Idempotency-Key`, a chave vira o id do item. Reenviar a mesma chave para o
+        mesmo restaurante devolve o item ja criado, sem sobrescrever e sem publicar
+        evento de novo. A mesma chave em outro restaurante retorna 409.
+      operationId: createMenuItem
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RestaurantId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMenuItemRequest'
+      responses:
+        '201':
+          description: Item criado (ou item original, em replay idempotente)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MenuItem'
+        '400':
+          $ref: '#/components/responses/InvalidArgument'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '500':
+          $ref: '#/components/responses/Internal'
+
+  /restaurants/{id}/menu/items/{itemId}:
+    patch:
+      tags: [Admin]
+      summary: Atualiza parcialmente um item
+      description: Apenas os campos enviados sao alterados.
+      operationId: updateMenuItem
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RestaurantId'
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMenuItemRequest'
+      responses:
+        '200':
+          description: Item atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MenuItem'
+        '400':
+          $ref: '#/components/responses/InvalidArgument'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '500':
+          $ref: '#/components/responses/Internal'
+
+  /restaurants/{id}/menu/validate:
+    post:
+      tags: [Internal]
+      summary: Valida itens para criacao de pedido
+      description: |
+        Consumido pelo order-service. Retorna 200 mesmo com itens invalidos: a
+        invalidez e' resposta de negocio (RN003), nao erro de transporte.
+        Apenas restaurante inexistente ou requisicao malformada geram erro HTTP.
+
+        Ainda sem autenticacao servico-a-servico: nao expor este endpoint pelo gateway.
+      operationId: validateMenuItems
+      parameters:
+        - $ref: '#/components/parameters/RestaurantId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidateMenuItemsRequest'
+            example:
+              item_ids: [item-1, item-2, item-3]
+      responses:
+        '200':
+          description: Resultado da validacao item a item
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidateMenuItemsResponse'
+              example:
+                restaurant_id: rest-1
+                restaurant_active: true
+                all_valid: false
+                items:
+                  - { item_id: item-1, found: true, available: true, price: 39.9, valid: true }
+                  - { item_id: item-2, found: true, available: false, price: 12.5, valid: false, reason: item_unavailable }
+                  - { item_id: item-3, found: false, available: false, price: 0, valid: false, reason: item_not_found }
+        '400':
+          $ref: '#/components/responses/InvalidArgument'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '500':
+          $ref: '#/components/responses/Internal'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Access token emitido pelo auth-service (mesmo JWT_SECRET e issuer).
+
+  parameters:
+    RestaurantId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      description: Quando informada, e' usada como id do recurso criado.
+      schema:
+        type: string
+
+  responses:
+    InvalidArgument:
+      description: Entrada invalida
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: INVALID_ARGUMENT
+            message: page_size must be between 1 and 100
+            request_id: 7b0c...
+            correlation_id: 7b0c...
+    Unauthorized:
+      description: Token ausente, invalido ou expirado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Recurso nao encontrado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Conflict:
+      description: Idempotency-Key ja usada para outro recurso
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    PayloadTooLarge:
+      description: Body acima de 64 KiB
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: PAYLOAD_TOO_LARGE
+            message: request body too large
+    TooManyRequests:
+      description: Limite de requisicoes por IP excedido
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Internal:
+      description: Erro interno (sem detalhes de implementacao)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    StatusResponse:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+
+    ReadyResponse:
+      type: object
+      required: [service, status]
+      properties:
+        service:
+          type: string
+        status:
+          type: string
+
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          enum: [INVALID_ARGUMENT, UNAUTHORIZED, FORBIDDEN, NOT_FOUND, CONFLICT, PAYLOAD_TOO_LARGE, TOO_MANY_REQUESTS, INTERNAL]
+        message:
+          type: string
+        request_id:
+          type: string
+        correlation_id:
+          type: string
+
+    RestaurantStatus:
+      type: string
+      enum: [active, inactive]
+
+    MenuCategory:
+      type: string
+      enum: [pizzaria, hamburgueria, japones, comida brasileira, sorveteria]
+
+    Restaurant:
+      type: object
+      required: [id, name, address, phone_number, status, delivery_fee]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        address:
+          type: string
+        phone_number:
+          type: string
+        status:
+          $ref: '#/components/schemas/RestaurantStatus'
+        delivery_fee:
+          type: number
+          format: double
+          minimum: 0
+
+    Pagination:
+      type: object
+      required: [page, page_size, has_more]
+      properties:
+        page:
+          type: integer
+        page_size:
+          type: integer
+        has_more:
+          type: boolean
+
+    ListRestaurantsResponse:
+      type: object
+      required: [restaurants, pagination]
+      properties:
+        restaurants:
+          type: array
+          items:
+            $ref: '#/components/schemas/Restaurant'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    CreateRestaurantRequest:
+      type: object
+      additionalProperties: false
+      required: [name, address, phone_number, delivery_fee]
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+        phone_number:
+          type: string
+        status:
+          $ref: '#/components/schemas/RestaurantStatus'
+        delivery_fee:
+          type: number
+          format: double
+          minimum: 0
+
+    MenuItem:
+      type: object
+      required: [id, restaurant_id, name, price, category, available]
+      properties:
+        id:
+          type: string
+        restaurant_id:
+          type: string
+        name:
+          type: string
+        price:
+          type: number
+          format: double
+        category:
+          $ref: '#/components/schemas/MenuCategory'
+        available:
+          type: boolean
+
+    ListMenuResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MenuItem'
+
+    CreateMenuItemRequest:
+      type: object
+      additionalProperties: false
+      required: [name, price, category]
+      properties:
+        name:
+          type: string
+        price:
+          type: number
+          format: double
+        category:
+          $ref: '#/components/schemas/MenuCategory'
+        available:
+          type: boolean
+          default: true
+
+    UpdateMenuItemRequest:
+      type: object
+      additionalProperties: false
+      description: Body vazio e' aceito e nao altera o item.
+      properties:
+        name:
+          type: string
+        price:
+          type: number
+          format: double
+        category:
+          $ref: '#/components/schemas/MenuCategory'
+        available:
+          type: boolean
+
+    ValidateMenuItemsRequest:
+      type: object
+      additionalProperties: false
+      required: [item_ids]
+      properties:
+        item_ids:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            type: string
+
+    MenuItemValidation:
+      type: object
+      required: [item_id, found, available, price, valid]
+      properties:
+        item_id:
+          type: string
+        found:
+          type: boolean
+        available:
+          type: boolean
+        price:
+          type: number
+          format: double
+          description: Preco de catalogo; 0 quando o item nao existe.
+        valid:
+          type: boolean
+        reason:
+          type: string
+          enum: [item_not_found, item_unavailable, restaurant_inactive]
+          description: Presente apenas quando valid=false.
+
+    ValidateMenuItemsResponse:
+      type: object
+      required: [restaurant_id, restaurant_active, all_valid, items]
+      properties:
+        restaurant_id:
+          type: string
+        restaurant_active:
+          type: boolean
+        all_valid:
+          type: boolean
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MenuItemValidation'

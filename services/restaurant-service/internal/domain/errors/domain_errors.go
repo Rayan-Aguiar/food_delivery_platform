@@ -19,4 +19,5 @@ var (
 	ErrItemUnavailable     = errors.New("menu item is unavailable")
 	ErrMenuItemRestaurant  = errors.New("menu item restaurant id is invalid")
 	ErrMenuItemNotFound    = errors.New("menu item not found")
+	ErrMenuItemExists      = errors.New("menu item already exists")
 )

@@ -211,3 +211,42 @@ func TestRouter_UnknownPath_Returns404(t *testing.T) {
 		t.Errorf("code = %q, want %q", resp.Code, apperrors.CodeNotFound)
 	}
 }
+
+func TestRouter_OversizedBody_Returns413(t *testing.T) {
+	body := `{"item_ids":["` + strings.Repeat("x", maxRequestBodyBytes) + `"]}`
+	r := httptest.NewRequest(http.MethodPost, "/restaurants/rest-1/menu/validate", strings.NewReader(body))
+	w := httptest.NewRecorder()
+	newTestRouter().ServeHTTP(w, r)
+
+	if w.Code != http.StatusRequestEntityTooLarge {
+		t.Fatalf("status = %d, want 413; body: %s", w.Code, w.Body)
+	}
+	var resp contracts.ErrorResponse
+	if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if resp.Code != codePayloadTooLarge {
+		t.Errorf("code = %q, want %q", resp.Code, codePayloadTooLarge)
+	}
+}
+
+func TestRouter_MetricsEndpoint_ExposesRouteLabels(t *testing.T) {
+	router := newTestRouter()
+
+	// Gera uma observacao numa rota com path param antes de ler /metrics.
+	router.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/restaurants/rest-42", nil))
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/metrics", nil))
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", w.Code)
+	}
+	body := w.Body.String()
+	if !strings.Contains(body, `path="GET /restaurants/{id}"`) {
+		t.Error("expected histogram labeled by route pattern through the full middleware chain")
+	}
+	if strings.Contains(body, `path="/restaurants/rest-42"`) {
+		t.Error("raw path with id must not be used as label")
+	}
+}

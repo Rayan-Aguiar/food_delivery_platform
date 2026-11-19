@@ -6,6 +6,7 @@ import (
 
 	"food_delivery_platform/services/restaurant-service/internal/domain/entities"
 	domainerrors "food_delivery_platform/services/restaurant-service/internal/domain/errors"
+	"food_delivery_platform/services/restaurant-service/internal/domain/ports"
 
 	"go.mongodb.org/mongo-driver/bson"
 	mdriver "go.mongodb.org/mongo-driver/mongo"
@@ -22,14 +23,20 @@ func NewRestaurantRepository(db *mdriver.Database) *RestaurantRepository {
 	}
 }
 
-func (r *RestaurantRepository) List(ctx context.Context) ([]entities.Restaurant, error) {
-	cursor, err := r.col.Find(ctx, bson.M{})
+func (r *RestaurantRepository) List(ctx context.Context, query ports.ListRestaurantsQuery) ([]entities.Restaurant, error) {
+	// Ordena por _id (indice padrao) para a paginacao ser deterministica sem indice extra.
+	opts := options.Find().
+		SetSort(bson.D{{Key: "_id", Value: 1}}).
+		SetSkip(int64(query.Offset)).
+		SetLimit(int64(query.Limit))
+
+	cursor, err := r.col.Find(ctx, bson.M{}, opts)
 	if err != nil {
 		return nil, err
 	}
 	defer cursor.Close(ctx)
 
-	restaurants := make([]entities.Restaurant, 0)
+	restaurants := make([]entities.Restaurant, 0, query.Limit)
 	for cursor.Next(ctx) {
 		var doc restaurantDoc
 		if err := cursor.Decode(&doc); err != nil {

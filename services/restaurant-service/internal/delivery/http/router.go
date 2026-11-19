@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"food_delivery_platform/services/restaurant-service/internal/observability"
 	"food_delivery_platform/shared/middleware"
 
 	"golang.org/x/time/rate"
@@ -15,6 +16,7 @@ func NewRouter(log *slog.Logger, timeout time.Duration, serviceName string, rest
 
 	mux.HandleFunc("GET /health/live", LiveHandler)
 	mux.HandleFunc("GET /health/ready", ReadyHandler(serviceName))
+	mux.Handle("GET /metrics", observability.PrometheusHandler())
 
 	if restaurants != nil {
 		// Leitura publica: rate limit basico por IP contra burst/scraping.
@@ -36,8 +38,13 @@ func NewRouter(log *slog.Logger, timeout time.Duration, serviceName string, rest
 
 	mux.HandleFunc("/", NotFoundHandler)
 
+	// Metricas e tracing ficam colados no mux (sem middleware que clone a request
+	// no meio) para enxergar r.Pattern e rotular pela rota, nao pelo path cru.
 	var handler http.Handler = mux
+	handler = observability.HTTPMetricsMiddleware(handler)
+	handler = observability.NewHTTPHandler(handler, "restaurant.http")
 	handler = methodGuard(handler)
+	handler = http.MaxBytesHandler(handler, maxRequestBodyBytes)
 	handler = middleware.Recovery(log)(handler)
 	handler = middleware.AccessLog(log)(handler)
 	handler = middleware.CorrelationID(handler)
@@ -51,6 +58,7 @@ func methodGuard(next http.Handler) http.Handler {
 	allowedMethodsByPath := map[string]string{
 		"/health/live":  http.MethodGet,
 		"/health/ready": http.MethodGet,
+		"/metrics":      http.MethodGet,
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

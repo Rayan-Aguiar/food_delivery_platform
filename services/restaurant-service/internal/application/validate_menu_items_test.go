@@ -217,3 +217,38 @@ func TestValidateMenuItemsUseCase_Execute(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateMenuItemsUseCase_Execute_ItemLimit(t *testing.T) {
+	restaurants := &fakeRestaurantRepo{
+		getByIDFn: func(_ context.Context, _ string) (entities.Restaurant, error) {
+			return mustRestaurant(), nil
+		},
+	}
+	menu := &fakeMenuRepo{}
+
+	ids := func(n int) []string {
+		out := make([]string, n)
+		for i := range out {
+			out[i] = "item"
+		}
+		return out
+	}
+
+	uc := application.NewValidateMenuItemsUseCase(restaurants, menu)
+
+	if _, err := uc.Execute(context.Background(), application.ValidateMenuItemsInput{
+		RestaurantID: "rest-1",
+		ItemIDs:      ids(application.MaxValidateMenuItems),
+	}); err != nil {
+		t.Fatalf("exactly %d items must be accepted, got %v", application.MaxValidateMenuItems, err)
+	}
+
+	_, err := uc.Execute(context.Background(), application.ValidateMenuItemsInput{
+		RestaurantID: "rest-1",
+		ItemIDs:      ids(application.MaxValidateMenuItems + 1),
+	})
+	var appErr *apperrors.AppError
+	if !errors.As(err, &appErr) || appErr.Code != apperrors.CodeInvalidArgument {
+		t.Fatalf("expected invalid argument above limit, got %v", err)
+	}
+}

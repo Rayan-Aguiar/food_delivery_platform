@@ -18,6 +18,7 @@ import (
 func TestListRestaurantsHandler(t *testing.T) {
 	tests := []struct {
 		name       string
+		url        string
 		executor   *fakeListRestaurants
 		wantStatus int
 		wantCode   string
@@ -25,25 +26,53 @@ func TestListRestaurantsHandler(t *testing.T) {
 	}{
 		{
 			name:       "success returns restaurants",
+			url:        "/restaurants",
 			executor:   &fakeListRestaurants{},
 			wantStatus: http.StatusOK,
 			wantCount:  1,
 		},
 		{
 			name: "empty list returns empty array",
+			url:  "/restaurants",
 			executor: &fakeListRestaurants{
-				fn: func(_ context.Context) ([]entities.Restaurant, error) {
-					return []entities.Restaurant{}, nil
+				fn: func(_ context.Context, _ application.ListRestaurantsInput) (application.ListRestaurantsOutput, error) {
+					return application.ListRestaurantsOutput{Restaurants: []entities.Restaurant{}, Page: 1, PageSize: 20}, nil
 				},
 			},
 			wantStatus: http.StatusOK,
 			wantCount:  0,
 		},
 		{
-			name: "use case error returns 500",
+			name:       "non-integer page returns 400",
+			url:        "/restaurants?page=abc",
+			executor:   &fakeListRestaurants{},
+			wantStatus: http.StatusBadRequest,
+			wantCode:   apperrors.CodeInvalidArgument,
+		},
+		{
+			name:       "non-integer page_size returns 400",
+			url:        "/restaurants?page_size=1.5",
+			executor:   &fakeListRestaurants{},
+			wantStatus: http.StatusBadRequest,
+			wantCode:   apperrors.CodeInvalidArgument,
+		},
+		{
+			name: "use case validation error returns 400",
+			url:  "/restaurants?page_size=1000",
 			executor: &fakeListRestaurants{
-				fn: func(_ context.Context) ([]entities.Restaurant, error) {
-					return nil, apperrors.Internal("db unavailable", nil)
+				fn: func(_ context.Context, _ application.ListRestaurantsInput) (application.ListRestaurantsOutput, error) {
+					return application.ListRestaurantsOutput{}, apperrors.InvalidArgument("page_size must be between 1 and 100", nil)
+				},
+			},
+			wantStatus: http.StatusBadRequest,
+			wantCode:   apperrors.CodeInvalidArgument,
+		},
+		{
+			name: "use case error returns 500",
+			url:  "/restaurants",
+			executor: &fakeListRestaurants{
+				fn: func(_ context.Context, _ application.ListRestaurantsInput) (application.ListRestaurantsOutput, error) {
+					return application.ListRestaurantsOutput{}, apperrors.Internal("db unavailable", nil)
 				},
 			},
 			wantStatus: http.StatusInternalServerError,
@@ -55,7 +84,7 @@ func TestListRestaurantsHandler(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			h := NewRestaurantHandlers(tc.executor, &fakeGetRestaurantDetails{}, &fakeListRestaurantMenu{}, &fakeCreateRestaurant{}, &fakeCreateMenuItem{}, &fakeUpdateMenuItem{}, &fakeValidateMenuItems{})
 
-			r := httptest.NewRequest(http.MethodGet, "/restaurants", nil)
+			r := httptest.NewRequest(http.MethodGet, tc.url, nil)
 			w := httptest.NewRecorder()
 			h.ListRestaurantsHandler(w, r)
 
@@ -79,6 +108,42 @@ func TestListRestaurantsHandler(t *testing.T) {
 				t.Errorf("restaurants count = %d, want %d", len(resp.Restaurants), tc.wantCount)
 			}
 		})
+	}
+}
+
+func TestListRestaurantsHandler_ForwardsPaginationAndReturnsMetadata(t *testing.T) {
+	var gotInput application.ListRestaurantsInput
+	executor := &fakeListRestaurants{
+		fn: func(_ context.Context, input application.ListRestaurantsInput) (application.ListRestaurantsOutput, error) {
+			gotInput = input
+			return application.ListRestaurantsOutput{
+				Restaurants: []entities.Restaurant{mustRestaurant()},
+				Page:        input.Page,
+				PageSize:    input.PageSize,
+				HasMore:     true,
+			}, nil
+		},
+	}
+	h := NewRestaurantHandlers(executor, &fakeGetRestaurantDetails{}, &fakeListRestaurantMenu{}, &fakeCreateRestaurant{}, &fakeCreateMenuItem{}, &fakeUpdateMenuItem{}, &fakeValidateMenuItems{})
+
+	r := httptest.NewRequest(http.MethodGet, "/restaurants?page=2&page_size=5", nil)
+	w := httptest.NewRecorder()
+	h.ListRestaurantsHandler(w, r)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200; body: %s", w.Code, w.Body)
+	}
+	if gotInput.Page != 2 || gotInput.PageSize != 5 {
+		t.Errorf("forwarded input = %+v, want page=2 page_size=5", gotInput)
+	}
+
+	var resp listRestaurantsResponse
+	if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	want := paginationResponse{Page: 2, PageSize: 5, HasMore: true}
+	if resp.Pagination != want {
+		t.Errorf("pagination = %+v, want %+v", resp.Pagination, want)
 	}
 }
 

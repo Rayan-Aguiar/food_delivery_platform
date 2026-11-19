@@ -249,17 +249,25 @@ Instrumentar o servico para operacao confiavel e diagnostico rapido.
 Voce vai aprender:
 Como medir comportamento de endpoints publicos e internos com sinais de operacao.
 
+Status atual:
+- [x] Concluida
+
 ### Checklist
-- [ ] Logs estruturados por endpoint.
-- [ ] Metricas de leitura de menu e validacao.
-- [ ] Tracing na rota de validacao de itens.
-- [ ] Testes unitarios de regras de disponibilidade e preco.
-- [ ] Testes de integracao Mongo.
-- [ ] Teste de contrato do endpoint de validacao.
+- [x] Logs estruturados por endpoint (access log JSON do shared com request_id/correlation_id).
+- [x] Metricas de leitura de menu e validacao (`http_request_duration_seconds` rotulado pelo padrao da rota + `restaurant_menu_item_validations_total{result}`).
+- [x] Tracing na rota de validacao de itens (otelhttp + otelmongo, atributos de resultado no span).
+- [x] Testes unitarios de regras de disponibilidade e preco.
+- [x] Testes de integracao Mongo (build tag `integration`, database temporario por teste).
+- [x] Teste de contrato do endpoint de validacao (JSON literal em `validate_contract_test.go`).
 
 ### Criterio de pronto
-- [ ] Observabilidade minima ativa.
-- [ ] Suite de testes cobrindo fluxos criticos.
+- [x] Observabilidade minima ativa (`/metrics` coletado pelo Prometheus; tracing via `OTEL_ENABLED`).
+- [x] Suite de testes cobrindo fluxos criticos.
+
+### Ajustes feitos junto com a fase
+- Paginacao em `GET /restaurants` (`page`/`page_size`, max 100, `has_more` sem CountDocuments extra): a listagem carregava a colecao inteira.
+- Limite de 64 KiB no body (413 `PAYLOAD_TOO_LARGE`) e de 100 `item_ids` na validacao.
+- Correcao de idempotencia em `POST /restaurants/{id}/menu/items`: retry com a mesma `Idempotency-Key` devolvia 500 (chave duplicada no insert); agora devolve o item original, e a chave usada em outro restaurante retorna 409.
 
 ---
 
@@ -270,15 +278,23 @@ Finalizar entrega com contrato documentado e empacotamento para execucao padroni
 Voce vai aprender:
 Como preparar servico para consumo por times e execucao em ambiente containerizado.
 
+Status atual:
+- [ ] Em validacao (codigo pronto; build e compose pendentes de teste)
+
 ### Checklist
-- [ ] Gerar/atualizar OpenAPI com rotas publicas, admin e interna.
-- [ ] Criar Dockerfile multi-stage.
-- [ ] Validar variaveis de ambiente no README do servico.
+- [x] Gerar/atualizar OpenAPI com rotas publicas, admin e interna (`docs/openapi/openapi.v1.yaml`, servido no Swagger UI junto com o auth).
+- [x] Criar Dockerfile multi-stage (usuario sem root, healthcheck).
+- [x] Validar variaveis de ambiente no README do servico.
 
 ### Criterio de pronto
-- [ ] OpenAPI publica e valida.
-- [ ] Build de imagem funcionando.
-- [ ] Servico pronto para compose e integracao no roadmap.
+- [ ] OpenAPI publica e valida (escrita; falta rodar o lint).
+- [ ] Build de imagem funcionando (Dockerfile escrito; falta validar o build).
+- [ ] Servico pronto para compose e integracao no roadmap (`restaurant-service` em `docker-compose.restaurant.yml`; falta subir e testar).
+
+### Pendencias conhecidas (fora do escopo deste TODO)
+- Autenticacao servico-a-servico no endpoint interno de validacao (ver nota da Fase 7).
+- `/health/ready` nao verifica Mongo/RabbitMQ: responde pronto mesmo com dependencia fora.
+- Retry de `POST /restaurants` com a mesma `Idempotency-Key` substitui o restaurante (upsert) em vez de devolver o original como no item de menu.
 
 ---
 

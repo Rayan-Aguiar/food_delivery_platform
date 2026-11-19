@@ -43,7 +43,7 @@ func (h *RestaurantHandlers) CreateRestaurantHandler(w http.ResponseWriter, r *h
 
 	var req createRestaurantRequest
 	if err := decodeJSON(r, &req); err != nil {
-		writeAppError(w, r, apperrors.InvalidArgument("invalid request body", err))
+		writeAppError(w, r, requestBodyError(err))
 		return
 	}
 
@@ -76,7 +76,7 @@ func (h *RestaurantHandlers) CreateMenuItemHandler(w http.ResponseWriter, r *htt
 
 	var req createMenuItemRequest
 	if err := decodeJSON(r, &req); err != nil {
-		writeAppError(w, r, apperrors.InvalidArgument("invalid request body", err))
+		writeAppError(w, r, requestBodyError(err))
 		return
 	}
 
@@ -111,7 +111,7 @@ func (h *RestaurantHandlers) UpdateMenuItemHandler(w http.ResponseWriter, r *htt
 
 	var req updateMenuItemRequest
 	if err := decodeJSON(r, &req); err != nil {
-		writeAppError(w, r, apperrors.InvalidArgument("invalid request body", err))
+		writeAppError(w, r, requestBodyError(err))
 		return
 	}
 
@@ -131,6 +131,22 @@ func (h *RestaurantHandlers) UpdateMenuItemHandler(w http.ResponseWriter, r *htt
 	}
 
 	_ = utils.WriteJSON(w, http.StatusOK, toMenuItemResponse(item))
+}
+
+// maxRequestBodyBytes e' aplicado no router via http.MaxBytesHandler. Os payloads
+// deste servico tem poucos KB; 64 KiB da folga sem permitir abuso de memoria.
+const maxRequestBodyBytes = 64 << 10
+
+const codePayloadTooLarge = "PAYLOAD_TOO_LARGE"
+
+// requestBodyError traduz falha de leitura do body: estouro de limite vira 413,
+// qualquer outra coisa (JSON malformado, campo desconhecido) vira 400.
+func requestBodyError(err error) error {
+	var maxBytesErr *http.MaxBytesError
+	if errors.As(err, &maxBytesErr) {
+		return apperrors.New(codePayloadTooLarge, "request body too large", http.StatusRequestEntityTooLarge, err)
+	}
+	return apperrors.InvalidArgument("invalid request body", err)
 }
 
 func decodeJSON(r *http.Request, dest any) error {

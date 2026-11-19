@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"errors"
 
 	apperrors "food_delivery_platform/shared/errors"
 
@@ -18,7 +19,7 @@ type CreateMenuItemInput struct {
 	Available    bool
 
 	// IdempotencyKey, quando informado, e usado como ID do item: reenviar a
-	// mesma chave repete o upsert no mesmo documento em vez de criar duplicatas.
+	// mesma chave devolve o item ja criado (sem sobrescrever nem republicar evento).
 	IdempotencyKey string
 
 	CorrelationID string
@@ -67,6 +68,9 @@ func (uc *CreateMenuItemUseCase) Execute(ctx context.Context, input CreateMenuIt
 	}
 
 	if err := uc.menu.Save(ctx, item); err != nil {
+		if errors.Is(err, domainerrors.ErrMenuItemExists) && input.IdempotencyKey != "" {
+			return uc.replay(ctx, input.RestaurantID, id)
+		}
 		return entities.MenuItem{}, apperrors.Internal("failed to save menu item", err)
 	}
 
@@ -84,4 +88,19 @@ func (uc *CreateMenuItemUseCase) Execute(ctx context.Context, input CreateMenuIt
 	})
 
 	return item, nil
+}
+
+// replay atende o retry de uma criacao ja concluida: insert + lookup e' atomico o
+// bastante aqui porque o _id unico do Mongo garante um unico vencedor sob
+// concorrencia; quem perde a corrida le o documento do vencedor.
+func (uc *CreateMenuItemUseCase) replay(ctx context.Context, restaurantID, id string) (entities.MenuItem, error) {
+	existing, err := uc.menu.GetByID(ctx, restaurantID, id)
+	if errors.Is(err, domainerrors.ErrMenuItemNotFound) {
+		// A chave ja foi usada para um item de outro restaurante.
+		return entities.MenuItem{}, apperrors.Conflict("idempotency key already used for another resource", nil)
+	}
+	if err != nil {
+		return entities.MenuItem{}, apperrors.Internal("failed to get menu item", err)
+	}
+	return existing, nil
 }

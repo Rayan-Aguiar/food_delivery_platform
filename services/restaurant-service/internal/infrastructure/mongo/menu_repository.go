@@ -63,6 +63,9 @@ func (r *MenuRepository) GetByID(ctx context.Context, restaurantID, itemID strin
 
 func (r *MenuRepository) Save(ctx context.Context, item entities.MenuItem) error {
 	_, err := r.col.InsertOne(ctx, mapMenuItemEntityToDoc(item))
+	if mdriver.IsDuplicateKeyError(err) {
+		return domainerrors.ErrMenuItemExists
+	}
 	return err
 }
 

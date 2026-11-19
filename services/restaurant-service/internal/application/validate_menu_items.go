@@ -10,6 +10,10 @@ import (
 	"food_delivery_platform/services/restaurant-service/internal/domain/ports"
 )
 
+// MaxValidateMenuItems limita o tamanho de um pedido validado de uma vez: protege o
+// hot path contra payloads abusivos e mantem a resposta com tamanho previsivel.
+const MaxValidateMenuItems = 100
+
 const (
 	ValidationReasonItemNotFound       = "item_not_found"
 	ValidationReasonItemUnavailable    = "item_unavailable"
@@ -52,6 +56,9 @@ func (uc *ValidateMenuItemsUseCase) Execute(ctx context.Context, input ValidateM
 	}
 	if len(input.ItemIDs) == 0 {
 		return ValidateMenuItemsOutput{}, apperrors.InvalidArgument("at least one item id is required", nil)
+	}
+	if len(input.ItemIDs) > MaxValidateMenuItems {
+		return ValidateMenuItemsOutput{}, apperrors.InvalidArgument("at most 100 item ids are allowed", nil)
 	}
 
 	restaurant, err := uc.restaurants.GetByID(ctx, input.RestaurantID)

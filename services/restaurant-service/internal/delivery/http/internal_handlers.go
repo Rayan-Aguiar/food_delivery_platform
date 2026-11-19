@@ -7,6 +7,7 @@ import (
 	"food_delivery_platform/shared/utils"
 
 	"food_delivery_platform/services/restaurant-service/internal/application"
+	"food_delivery_platform/services/restaurant-service/internal/observability"
 )
 
 type validateMenuItemsRequest struct {
@@ -43,7 +44,7 @@ func (h *RestaurantHandlers) ValidateMenuItemsHandler(w http.ResponseWriter, r *
 
 	var req validateMenuItemsRequest
 	if err := decodeJSON(r, &req); err != nil {
-		writeAppError(w, r, apperrors.InvalidArgument("invalid request body", err))
+		writeAppError(w, r, requestBodyError(err))
 		return
 	}
 
@@ -56,7 +57,19 @@ func (h *RestaurantHandlers) ValidateMenuItemsHandler(w http.ResponseWriter, r *
 		return
 	}
 
+	recordValidation(r, out)
 	_ = utils.WriteJSON(w, http.StatusOK, toValidateMenuItemsResponse(out))
+}
+
+func recordValidation(r *http.Request, out application.ValidateMenuItemsOutput) {
+	observability.AnnotateMenuValidation(r.Context(), out.RestaurantID, len(out.Items), out.AllValid)
+	for _, item := range out.Items {
+		result := item.Reason
+		if item.Valid {
+			result = "valid"
+		}
+		observability.RecordMenuItemValidation(result)
+	}
 }
 
 func toValidateMenuItemsResponse(out application.ValidateMenuItemsOutput) validateMenuItemsResponse {

@@ -201,3 +201,79 @@ func TestCreateMenuItemUseCase_PublishFailureIsBestEffort(t *testing.T) {
 		t.Fatalf("expected 1 publish attempt, got %d", len(eventsPublisher.menuUpdatedCalls))
 	}
 }
+
+func TestCreateMenuItemUseCase_Execute_IdempotentReplay(t *testing.T) {
+	ctx := context.Background()
+	restaurants := &fakeRestaurantRepo{
+		getByIDFn: func(_ context.Context, _ string) (entities.Restaurant, error) {
+			return mustRestaurant(), nil
+		},
+	}
+	input := application.CreateMenuItemInput{
+		RestaurantID:   "rest-1",
+		Name:           "Margherita (retry com body diferente)",
+		Price:          99,
+		Category:       string(entities.MenuCategoryPizzaria),
+		Available:      true,
+		IdempotencyKey: "client-key-1",
+	}
+	original, err := entities.NewMenuItem("client-key-1", "rest-1", "Margherita", 39.9, entities.MenuCategoryPizzaria, true)
+	if err != nil {
+		t.Fatalf("build original: %v", err)
+	}
+
+	saveDuplicate := func(context.Context, entities.MenuItem) error { return domainerrors.ErrMenuItemExists }
+
+	t.Run("retry returns the originally created item without republishing", func(t *testing.T) {
+		publisher := &fakeCatalogEventPublisher{}
+		menu := &fakeMenuRepo{
+			saveFn: saveDuplicate,
+			getByIDFn: func(_ context.Context, restaurantID, itemID string) (entities.MenuItem, error) {
+				if restaurantID != "rest-1" || itemID != "client-key-1" {
+					t.Errorf("lookup = (%q, %q), want (rest-1, client-key-1)", restaurantID, itemID)
+				}
+				return original, nil
+			},
+		}
+
+		got, err := application.NewCreateMenuItemUseCase(restaurants, menu, &fakeIDGenerator{}, publisher).Execute(ctx, input)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if got != original {
+			t.Errorf("replay = %+v, want original %+v (retry nao sobrescreve)", got, original)
+		}
+		if len(publisher.menuUpdatedCalls) != 0 {
+			t.Errorf("event published %d times on replay, want 0", len(publisher.menuUpdatedCalls))
+		}
+	})
+
+	t.Run("key used by another restaurant returns conflict", func(t *testing.T) {
+		menu := &fakeMenuRepo{
+			saveFn: saveDuplicate,
+			getByIDFn: func(context.Context, string, string) (entities.MenuItem, error) {
+				return entities.MenuItem{}, domainerrors.ErrMenuItemNotFound
+			},
+		}
+
+		_, err := application.NewCreateMenuItemUseCase(restaurants, menu, &fakeIDGenerator{}).Execute(ctx, input)
+
+		var appErr *apperrors.AppError
+		if !errors.As(err, &appErr) || appErr.Code != apperrors.CodeConflict {
+			t.Fatalf("expected conflict, got %v", err)
+		}
+	})
+
+	t.Run("duplicate without idempotency key is an internal error", func(t *testing.T) {
+		noKey := input
+		noKey.IdempotencyKey = ""
+		menu := &fakeMenuRepo{saveFn: saveDuplicate}
+
+		_, err := application.NewCreateMenuItemUseCase(restaurants, menu, &fakeIDGenerator{ids: []string{"gen-1"}}).Execute(ctx, noKey)
+
+		var appErr *apperrors.AppError
+		if !errors.As(err, &appErr) || appErr.Code != apperrors.CodeInternal {
+			t.Fatalf("expected internal error, got %v", err)
+		}
+	})
+}

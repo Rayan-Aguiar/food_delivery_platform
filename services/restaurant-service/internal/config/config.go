@@ -19,6 +19,8 @@ type Config struct {
 	JWTSecret      string
 	JWTIssuer      string
 	RabbitMQURL    string
+	OTelEnabled    bool
+	Environment    string
 }
 
 func Load() Config {
@@ -39,6 +41,8 @@ func Load() Config {
 		// esperado precisa bater com o JWT_ISSUER configurado la.
 		JWTIssuer:   getEnv("JWT_ISSUER", "auth-service"),
 		RabbitMQURL: getEnv("RABBITMQ_URL", ""),
+		OTelEnabled: getEnvBool("OTEL_ENABLED", false),
+		Environment: getEnv("ENVIRONMENT", "local"),
 	}
 }
 
@@ -62,4 +66,18 @@ func getEnvInt(key string, fallback int) int {
 	}
 
 	return n
+}
+
+func getEnvBool(key string, fallback bool) bool {
+	v := os.Getenv(key)
+	if v == "" {
+		return fallback
+	}
+
+	b, err := strconv.ParseBool(v)
+	if err != nil {
+		return fallback
+	}
+
+	return b
 }

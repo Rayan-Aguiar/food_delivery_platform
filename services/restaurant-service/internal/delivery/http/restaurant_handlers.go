@@ -3,6 +3,7 @@ package httpdelivery
 import (
 	"context"
 	"net/http"
+	"strconv"
 
 	apperrors "food_delivery_platform/shared/errors"
 	"food_delivery_platform/shared/utils"
@@ -12,7 +13,7 @@ import (
 )
 
 type listRestaurantsExecutor interface {
-	Execute(ctx context.Context) ([]entities.Restaurant, error)
+	Execute(ctx context.Context, input application.ListRestaurantsInput) (application.ListRestaurantsOutput, error)
 }
 
 type getRestaurantDetailsExecutor interface {
@@ -78,8 +79,15 @@ type restaurantResponse struct {
 	DeliveryFee float64 `json:"delivery_fee"`
 }
 
+type paginationResponse struct {
+	Page     int  `json:"page"`
+	PageSize int  `json:"page_size"`
+	HasMore  bool `json:"has_more"`
+}
+
 type listRestaurantsResponse struct {
 	Restaurants []restaurantResponse `json:"restaurants"`
+	Pagination  paginationResponse   `json:"pagination"`
 }
 
 type menuItemResponse struct {
@@ -101,15 +109,43 @@ func (h *RestaurantHandlers) ListRestaurantsHandler(w http.ResponseWriter, r *ht
 		return
 	}
 
-	restaurants, err := h.listRestaurants.Execute(r.Context())
+	query := r.URL.Query()
+	page, err := parseOptionalInt(query.Get("page"))
+	if err != nil {
+		writeAppError(w, r, apperrors.InvalidArgument("page must be an integer", err))
+		return
+	}
+	pageSize, err := parseOptionalInt(query.Get("page_size"))
+	if err != nil {
+		writeAppError(w, r, apperrors.InvalidArgument("page_size must be an integer", err))
+		return
+	}
+
+	out, err := h.listRestaurants.Execute(r.Context(), application.ListRestaurantsInput{
+		Page:     page,
+		PageSize: pageSize,
+	})
 	if err != nil {
 		writeAppError(w, r, err)
 		return
 	}
 
 	_ = utils.WriteJSON(w, http.StatusOK, listRestaurantsResponse{
-		Restaurants: toRestaurantResponses(restaurants),
+		Restaurants: toRestaurantResponses(out.Restaurants),
+		Pagination: paginationResponse{
+			Page:     out.Page,
+			PageSize: out.PageSize,
+			HasMore:  out.HasMore,
+		},
 	})
+}
+
+// parseOptionalInt devolve 0 para parametro ausente; o caso de uso aplica o default.
+func parseOptionalInt(raw string) (int, error) {
+	if raw == "" {
+		return 0, nil
+	}
+	return strconv.Atoi(raw)
 }
 
 func (h *RestaurantHandlers) GetRestaurantDetailsHandler(w http.ResponseWriter, r *http.Request) {
