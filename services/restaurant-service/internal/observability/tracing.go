@@ -62,11 +62,32 @@ func SetupTracing(ctx context.Context, cfg TracingConfig) (func(context.Context)
 	return tp.Shutdown, nil
 }
 
-// NewHTTPHandler cria o span pai de cada request. Deve envolver o mux sem
-// middlewares que clonem a request no meio, para o otelhttp ler r.Pattern e
-// nomear o span pela rota.
+// NewHTTPHandler cria o span pai de cada request. O span nasce com o nome
+// operation e, ao final, o otelhttp o renomeia pelo formatter quando r.Pattern
+// foi preenchido pelo mux; por isso nao pode haver middleware que clone a
+// request entre este handler e o mux. Sem rota (ex.: 404), fica operation.
 func NewHTTPHandler(handler http.Handler, operation string) http.Handler {
-	return otelhttp.NewHandler(handler, operation)
+	return otelhttp.NewHandler(
+		withHTTPRoute(handler),
+		operation,
+		otelhttp.WithSpanNameFormatter(func(operation string, r *http.Request) string {
+			if r.Pattern != "" {
+				return r.Pattern
+			}
+			return operation
+		}),
+	)
+}
+
+// withHTTPRoute adiciona http.route ao span: o otelhttp so le r.Pattern no
+// inicio da request, quando o mux ainda nao resolveu a rota.
+func withHTTPRoute(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		next.ServeHTTP(w, r)
+		if r.Pattern != "" {
+			trace.SpanFromContext(r.Context()).SetAttributes(semconv.HTTPRoute(r.Pattern))
+		}
+	})
 }
 
 func NewMongoMonitor() *event.CommandMonitor {

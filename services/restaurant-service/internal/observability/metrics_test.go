@@ -7,6 +7,10 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
+	"go.opentelemetry.io/otel"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
 // seriesCount devolve quantas observacoes o histograma tem para o conjunto de labels.
@@ -64,6 +68,37 @@ func TestHTTPMetricsMiddleware_UnmatchedRoute(t *testing.T) {
 
 	if got := seriesCount(t, prometheus.Labels{"method": "DELETE", "path": unmatchedRoute, "status": "405"}); got != 1 {
 		t.Errorf("observations for unmatched route = %d, want 1", got)
+	}
+}
+
+func TestHTTPHandler_NamesSpanByRoutePattern(t *testing.T) {
+	recorder := tracetest.NewSpanRecorder()
+	tp := sdktrace.NewTracerProvider(sdktrace.WithSpanProcessor(recorder))
+	prev := otel.GetTracerProvider()
+	otel.SetTracerProvider(tp)
+	t.Cleanup(func() { otel.SetTracerProvider(prev) })
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /things/{id}", func(w http.ResponseWriter, _ *http.Request) {})
+	handler := NewHTTPHandler(HTTPMetricsMiddleware(mux), "test.http")
+
+	handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/things/42", nil))
+
+	spans := recorder.Ended()
+	if len(spans) != 1 {
+		t.Fatalf("ended spans = %d, want 1", len(spans))
+	}
+	if got := spans[0].Name(); got != "GET /things/{id}" {
+		t.Errorf("span name = %q, want route pattern", got)
+	}
+	var route string
+	for _, kv := range spans[0].Attributes() {
+		if kv.Key == semconv.HTTPRouteKey {
+			route = kv.Value.AsString()
+		}
+	}
+	if route != "GET /things/{id}" {
+		t.Errorf("http.route = %q, want route pattern", route)
 	}
 }
 
